@@ -38,6 +38,7 @@ func configureAPI(api *operations.CsjkBkAPI) http.Handler {
 	api.JSONProducer = runtime.JSONProducer()
 
 	api.AlertsGetFiringAlertsAllHandler = alertsHandler.NewGetFiringAlertsAllHandler(http.DefaultClient, "192.168.2.150:19093")
+	api.AlertsGetFiringAlertsClassificationHandler = alertsHandler.NewGetFiringAlertsClassificationHandler(http.DefaultClient, "192.168.2.150:19093")
 
 	api.PreServerShutdown = func() {}
 
