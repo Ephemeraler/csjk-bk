@@ -177,6 +177,128 @@ func init() {
           }
         }
       }
+    },
+    "/alerts/firing/classification": {
+      "get": {
+        "description": "以分页方式返回所有活跃报警信息, 该 API 为报警管理-活跃时间和报警页面中 \"分屏\" 报警信息请求.",
+        "tags": [
+          "alerts"
+        ],
+        "summary": "获取活跃报警",
+        "operationId": "getFiringAlertsClassification",
+        "parameters": [
+          {
+            "enum": [
+              "inband",
+              "outband",
+              "event"
+            ],
+            "type": "string",
+            "description": "分类名称, 例如 \"inband\", \"outband\", \"event\"",
+            "name": "classification",
+            "in": "query",
+            "required": true
+          },
+          {
+            "minimum": 1,
+            "type": "integer",
+            "format": "int64",
+            "default": 1,
+            "description": "页码",
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int64",
+            "default": 1,
+            "description": "页数据条目数",
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CommonResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "object",
+                      "properties": {
+                        "alerts": {
+                          "$ref": "#/definitions/Alerts"
+                        },
+                        "statistic": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "integer",
+                              "format": "int64"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "examples": {
+              "application/json": {
+                "count": 100,
+                "detail": "",
+                "next": "/alerts/firing/all?page=2\u0026page_size=10",
+                "previous": "",
+                "results": {
+                  "alerts": [
+                    {
+                      "endsat": null,
+                      "fingerprint": "abc123",
+                      "generatorurl": "http://example.com/alert1",
+                      "id": 1,
+                      "operation": "auto",
+                      "responder": "alice",
+                      "startsat": "2025-08-20T02:50:00Z",
+                      "status": "firing"
+                    }
+                  ],
+                  "statistic": {
+                    "inband": {
+                      "DISASTER": 1,
+                      "INFO": 10,
+                      "SEVERITY": 3,
+                      "WARN": 7
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          },
+          "500": {
+            "description": "内部服务错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -469,6 +591,128 @@ func init() {
           }
         }
       }
+    },
+    "/alerts/firing/classification": {
+      "get": {
+        "description": "以分页方式返回所有活跃报警信息, 该 API 为报警管理-活跃时间和报警页面中 \"分屏\" 报警信息请求.",
+        "tags": [
+          "alerts"
+        ],
+        "summary": "获取活跃报警",
+        "operationId": "getFiringAlertsClassification",
+        "parameters": [
+          {
+            "enum": [
+              "inband",
+              "outband",
+              "event"
+            ],
+            "type": "string",
+            "description": "分类名称, 例如 \"inband\", \"outband\", \"event\"",
+            "name": "classification",
+            "in": "query",
+            "required": true
+          },
+          {
+            "minimum": 1,
+            "type": "integer",
+            "format": "int64",
+            "default": 1,
+            "description": "页码",
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int64",
+            "default": 1,
+            "description": "页数据条目数",
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CommonResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "object",
+                      "properties": {
+                        "alerts": {
+                          "$ref": "#/definitions/Alerts"
+                        },
+                        "statistic": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "integer",
+                              "format": "int64"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "examples": {
+              "application/json": {
+                "count": 100,
+                "detail": "",
+                "next": "/alerts/firing/all?page=2\u0026page_size=10",
+                "previous": "",
+                "results": {
+                  "alerts": [
+                    {
+                      "endsat": null,
+                      "fingerprint": "abc123",
+                      "generatorurl": "http://example.com/alert1",
+                      "id": 1,
+                      "operation": "auto",
+                      "responder": "alice",
+                      "startsat": "2025-08-20T02:50:00Z",
+                      "status": "firing"
+                    }
+                  ],
+                  "statistic": {
+                    "inband": {
+                      "DISASTER": 1,
+                      "INFO": 10,
+                      "SEVERITY": 3,
+                      "WARN": 7
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          },
+          "500": {
+            "description": "内部服务错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -619,6 +863,24 @@ func init() {
           "additionalProperties": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      }
+    },
+    "GetFiringAlertsClassificationOKBodyAO1Results": {
+      "type": "object",
+      "properties": {
+        "alerts": {
+          "$ref": "#/definitions/Alerts"
+        },
+        "statistic": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int64"
+            }
           }
         }
       }

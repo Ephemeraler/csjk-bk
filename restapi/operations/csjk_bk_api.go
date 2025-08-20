@@ -47,6 +47,9 @@ func NewCsjkBkAPI(spec *loads.Document) *CsjkBkAPI {
 		AlertsGetFiringAlertsAllHandler: alerts.GetFiringAlertsAllHandlerFunc(func(params alerts.GetFiringAlertsAllParams) middleware.Responder {
 			return middleware.NotImplemented("operation alerts.GetFiringAlertsAll has not yet been implemented")
 		}),
+		AlertsGetFiringAlertsClassificationHandler: alerts.GetFiringAlertsClassificationHandlerFunc(func(params alerts.GetFiringAlertsClassificationParams) middleware.Responder {
+			return middleware.NotImplemented("operation alerts.GetFiringAlertsClassification has not yet been implemented")
+		}),
 	}
 }
 
@@ -85,6 +88,8 @@ type CsjkBkAPI struct {
 
 	// AlertsGetFiringAlertsAllHandler sets the operation handler for the get firing alerts all operation
 	AlertsGetFiringAlertsAllHandler alerts.GetFiringAlertsAllHandler
+	// AlertsGetFiringAlertsClassificationHandler sets the operation handler for the get firing alerts classification operation
+	AlertsGetFiringAlertsClassificationHandler alerts.GetFiringAlertsClassificationHandler
 
 	// ServeError is called when an error is received, there is a default handler
 	// but you can set your own with this
@@ -164,6 +169,9 @@ func (o *CsjkBkAPI) Validate() error {
 
 	if o.AlertsGetFiringAlertsAllHandler == nil {
 		unregistered = append(unregistered, "alerts.GetFiringAlertsAllHandler")
+	}
+	if o.AlertsGetFiringAlertsClassificationHandler == nil {
+		unregistered = append(unregistered, "alerts.GetFiringAlertsClassificationHandler")
 	}
 
 	if len(unregistered) > 0 {
@@ -257,6 +265,10 @@ func (o *CsjkBkAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/alerts/firing/all"] = alerts.NewGetFiringAlertsAll(o.context, o.AlertsGetFiringAlertsAllHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/alerts/firing/classification"] = alerts.NewGetFiringAlertsClassification(o.context, o.AlertsGetFiringAlertsClassificationHandler)
 }
 
 // Serve creates a http handler to serve the API over HTTP

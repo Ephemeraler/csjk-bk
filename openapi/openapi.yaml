@@ -103,6 +103,82 @@ paths:
           description: 内部服务错误
           schema:
             $ref: "#/definitions/StandardResponse"
+  /alerts/firing/classification:
+    get:
+      tags: ["alerts"]
+      summary: 获取活跃报警
+      description: 以分页方式返回所有活跃报警信息, 该 API 为报警管理-活跃时间和报警页面中 "分屏" 报警信息请求.
+      operationId: getFiringAlertsClassification
+      parameters:
+        - in: query
+          name: classification
+          enum: ["inband", "outband", "event"]
+          description: 分类名称, 例如 "inband", "outband", "event"
+          type: string
+          required: true
+        - in: query
+          name: page
+          description: 页码
+          type: integer
+          format: int64
+          default: 1
+          minimum: 1
+          required: true
+        - in: query
+          name: page_size 
+          description: 页数据条目数
+          type: integer
+          format: int64
+          default: 1
+          minimum: 1
+          maximum: 100
+          required: true
+      responses:
+        "200":
+          description: 成功响应
+          schema:
+            allOf:
+              - $ref: "#/definitions/CommonResponse"
+              - type: object
+                properties:
+                  results:
+                    type: object
+                    properties:
+                      statistic:
+                        type: object
+                        additionalProperties:
+                          type: object
+                          additionalProperties:
+                            type: integer
+                            format: int64
+                      alerts:
+                        $ref: "#/definitions/Alerts"
+          examples:
+            application/json:
+              count: 100
+              next: "/alerts/firing/all?page=2&page_size=10"
+              previous: ""
+              results:
+                statistic:
+                  inband: {"INFO": 10, "WARN": 7, "SEVERITY": 3, "DISASTER": 1}
+                alerts:
+                  - id: 1
+                    fingerprint: "abc123"
+                    status: "firing"
+                    startsat: "2025-08-20T02:50:00Z"
+                    endsat: null
+                    generatorurl: "http://example.com/alert1"
+                    responder: "alice"
+                    operation: "auto"
+              detail: ""
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: "#/definitions/StandardResponse"
+        "500":
+          description: 内部服务错误
+          schema:
+            $ref: "#/definitions/StandardResponse"
 
 definitions:
   StandardResponse:
