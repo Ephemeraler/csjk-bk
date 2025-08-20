@@ -14,10 +14,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// StandardResponse standard response
+// CommonResponse common response
 //
-// swagger:model StandardResponse
-type StandardResponse struct {
+// swagger:model CommonResponse
+type CommonResponse struct {
 
 	// 若请求为分页模式, 表示数据条目总数量, 否则为 -1
 	// Required: true
@@ -36,14 +36,10 @@ type StandardResponse struct {
 	// Required: true
 	// Format: uri
 	Previous *strfmt.URI `json:"previous"`
-
-	// 实际数据内容 (不同API返回的结构不同)
-	// Required: true
-	Results interface{} `json:"results"`
 }
 
-// Validate validates this standard response
-func (m *StandardResponse) Validate(formats strfmt.Registry) error {
+// Validate validates this common response
+func (m *CommonResponse) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCount(formats); err != nil {
@@ -62,17 +58,13 @@ func (m *StandardResponse) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateResults(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
 	return nil
 }
 
-func (m *StandardResponse) validateCount(formats strfmt.Registry) error {
+func (m *CommonResponse) validateCount(formats strfmt.Registry) error {
 
 	if err := validate.Required("count", "body", m.Count); err != nil {
 		return err
@@ -81,7 +73,7 @@ func (m *StandardResponse) validateCount(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *StandardResponse) validateDetail(formats strfmt.Registry) error {
+func (m *CommonResponse) validateDetail(formats strfmt.Registry) error {
 
 	if err := validate.Required("detail", "body", m.Detail); err != nil {
 		return err
@@ -90,7 +82,7 @@ func (m *StandardResponse) validateDetail(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *StandardResponse) validateNext(formats strfmt.Registry) error {
+func (m *CommonResponse) validateNext(formats strfmt.Registry) error {
 
 	if err := validate.Required("next", "body", m.Next); err != nil {
 		return err
@@ -103,7 +95,7 @@ func (m *StandardResponse) validateNext(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *StandardResponse) validatePrevious(formats strfmt.Registry) error {
+func (m *CommonResponse) validatePrevious(formats strfmt.Registry) error {
 
 	if err := validate.Required("previous", "body", m.Previous); err != nil {
 		return err
@@ -116,22 +108,13 @@ func (m *StandardResponse) validatePrevious(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *StandardResponse) validateResults(formats strfmt.Registry) error {
-
-	if m.Results == nil {
-		return errors.Required("results", "body", nil)
-	}
-
-	return nil
-}
-
-// ContextValidate validates this standard response based on context it is used
-func (m *StandardResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this common response based on context it is used
+func (m *CommonResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *StandardResponse) MarshalBinary() ([]byte, error) {
+func (m *CommonResponse) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -139,8 +122,8 @@ func (m *StandardResponse) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *StandardResponse) UnmarshalBinary(b []byte) error {
-	var res StandardResponse
+func (m *CommonResponse) UnmarshalBinary(b []byte) error {
+	var res CommonResponse
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

@@ -75,7 +75,7 @@ func init() {
             "schema": {
               "allOf": [
                 {
-                  "$ref": "#/definitions/StandardResponse"
+                  "$ref": "#/definitions/CommonResponse"
                 },
                 {
                   "type": "object",
@@ -240,8 +240,46 @@ func init() {
         "$ref": "#/definitions/Alert"
       }
     },
+    "CommonResponse": {
+      "type": "object",
+      "required": [
+        "count",
+        "next",
+        "previous",
+        "detail"
+      ],
+      "properties": {
+        "count": {
+          "description": "若请求为分页模式, 表示数据条目总数量, 否则为 -1",
+          "type": "integer",
+          "format": "int64",
+          "default": -1
+        },
+        "detail": {
+          "description": "若响应码非200, 将原因写到该字段",
+          "type": "string"
+        },
+        "next": {
+          "description": "若请求为分页模式, 返回下一页请求的URL",
+          "type": "string",
+          "format": "uri"
+        },
+        "previous": {
+          "description": "若请求为分页模式, 返回上一页请求的URL",
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
     "StandardResponse": {
       "type": "object",
+      "required": [
+        "count",
+        "next",
+        "previous",
+        "results",
+        "detail"
+      ],
       "properties": {
         "count": {
           "description": "若请求为分页模式, 表示数据条目总数量, 否则为 -1",
@@ -263,7 +301,7 @@ func init() {
           "type": "string",
           "format": "uri"
         },
-        "result": {
+        "results": {
           "description": "实际数据内容 (不同API返回的结构不同)",
           "type": "object"
         }
@@ -329,7 +367,7 @@ func init() {
             "schema": {
               "allOf": [
                 {
-                  "$ref": "#/definitions/StandardResponse"
+                  "$ref": "#/definitions/CommonResponse"
                 },
                 {
                   "type": "object",
@@ -494,6 +532,37 @@ func init() {
         "$ref": "#/definitions/Alert"
       }
     },
+    "CommonResponse": {
+      "type": "object",
+      "required": [
+        "count",
+        "next",
+        "previous",
+        "detail"
+      ],
+      "properties": {
+        "count": {
+          "description": "若请求为分页模式, 表示数据条目总数量, 否则为 -1",
+          "type": "integer",
+          "format": "int64",
+          "default": -1
+        },
+        "detail": {
+          "description": "若响应码非200, 将原因写到该字段",
+          "type": "string"
+        },
+        "next": {
+          "description": "若请求为分页模式, 返回下一页请求的URL",
+          "type": "string",
+          "format": "uri"
+        },
+        "previous": {
+          "description": "若请求为分页模式, 返回上一页请求的URL",
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
     "GetFiringAlertsAllOKBodyAO1Results": {
       "type": "object",
       "properties": {
@@ -556,6 +625,13 @@ func init() {
     },
     "StandardResponse": {
       "type": "object",
+      "required": [
+        "count",
+        "next",
+        "previous",
+        "results",
+        "detail"
+      ],
       "properties": {
         "count": {
           "description": "若请求为分页模式, 表示数据条目总数量, 否则为 -1",
@@ -577,7 +653,7 @@ func init() {
           "type": "string",
           "format": "uri"
         },
-        "result": {
+        "results": {
           "description": "实际数据内容 (不同API返回的结构不同)",
           "type": "object"
         }

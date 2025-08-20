@@ -67,7 +67,7 @@ func (o *GetFiringAlertsAll) ServeHTTP(rw http.ResponseWriter, r *http.Request) 
 //
 // swagger:model GetFiringAlertsAllOKBody
 type GetFiringAlertsAllOKBody struct {
-	models.StandardResponse
+	models.CommonResponse
 
 	// results
 	Results *GetFiringAlertsAllOKBodyGetFiringAlertsAllOKBodyAO1Results `json:"results,omitempty"`
@@ -76,11 +76,11 @@ type GetFiringAlertsAllOKBody struct {
 // UnmarshalJSON unmarshals this object from a JSON structure
 func (o *GetFiringAlertsAllOKBody) UnmarshalJSON(raw []byte) error {
 	// GetFiringAlertsAllOKBodyAO0
-	var getFiringAlertsAllOKBodyAO0 models.StandardResponse
+	var getFiringAlertsAllOKBodyAO0 models.CommonResponse
 	if err := swag.ReadJSON(raw, &getFiringAlertsAllOKBodyAO0); err != nil {
 		return err
 	}
-	o.StandardResponse = getFiringAlertsAllOKBodyAO0
+	o.CommonResponse = getFiringAlertsAllOKBodyAO0
 
 	// GetFiringAlertsAllOKBodyAO1
 	var dataGetFiringAlertsAllOKBodyAO1 struct {
@@ -99,7 +99,7 @@ func (o *GetFiringAlertsAllOKBody) UnmarshalJSON(raw []byte) error {
 func (o GetFiringAlertsAllOKBody) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 2)
 
-	getFiringAlertsAllOKBodyAO0, err := swag.WriteJSON(o.StandardResponse)
+	getFiringAlertsAllOKBodyAO0, err := swag.WriteJSON(o.CommonResponse)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +122,8 @@ func (o GetFiringAlertsAllOKBody) MarshalJSON() ([]byte, error) {
 func (o *GetFiringAlertsAllOKBody) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	// validation for a type composition with models.StandardResponse
-	if err := o.StandardResponse.Validate(formats); err != nil {
+	// validation for a type composition with models.CommonResponse
+	if err := o.CommonResponse.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -161,8 +161,8 @@ func (o *GetFiringAlertsAllOKBody) validateResults(formats strfmt.Registry) erro
 func (o *GetFiringAlertsAllOKBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	// validation for a type composition with models.StandardResponse
-	if err := o.StandardResponse.ContextValidate(ctx, formats); err != nil {
+	// validation for a type composition with models.CommonResponse
+	if err := o.CommonResponse.ContextValidate(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 

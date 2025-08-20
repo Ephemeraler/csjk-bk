@@ -49,7 +49,7 @@ paths:
           description: 成功响应
           schema:
             allOf:
-              - $ref: "#/definitions/StandardResponse"
+              - $ref: "#/definitions/CommonResponse"
               - type: object
                 properties:
                   results:
@@ -107,6 +107,12 @@ paths:
 definitions:
   StandardResponse:
     type: object
+    required:
+      - count
+      - next
+      - previous
+      - results
+      - detail
     properties:
       count:
         type: integer
@@ -121,9 +127,33 @@ definitions:
         type: string
         format: uri
         description: 若请求为分页模式, 返回上一页请求的URL
-      result:
+      results:
         type: object
         description: 实际数据内容 (不同API返回的结构不同)
+      detail:
+        type: string
+        description: 若响应码非200, 将原因写到该字段
+  CommonResponse:
+    type: object
+    required:
+      - count
+      - next
+      - previous
+      - detail
+    properties:
+      count:
+        type: integer
+        format: int64
+        description: 若请求为分页模式, 表示数据条目总数量, 否则为 -1
+        default: -1
+      next:
+        type: string
+        format: uri
+        description: 若请求为分页模式, 返回下一页请求的URL
+      previous:
+        type: string
+        format: uri
+        description: 若请求为分页模式, 返回上一页请求的URL
       detail:
         type: string
         description: 若响应码非200, 将原因写到该字段

@@ -1,6 +1,7 @@
 package alerts
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"csjk-bk/models"
+	"csjk-bk/pkg/common/utils"
 	alertsapi "csjk-bk/restapi/operations/alerts"
 )
 
@@ -28,27 +30,19 @@ type amAlert struct {
 	Annotations  map[string]string `json:"annotations"`
 }
 
-// NewGetFiringAlertsAllHandler creates handler for retrieving firing alerts.
-func NewGetFiringAlertsAllHandler(client *http.Client, alertManagerURL string) alertsapi.GetFiringAlertsAllHandler {
+// NewGetFiringAlertsAllHandler 创建 getFiringAlertsAll Handler.
+func NewGetFiringAlertsAllHandler(client *http.Client, address string) alertsapi.GetFiringAlertsAllHandler {
 	return alertsapi.GetFiringAlertsAllHandlerFunc(func(params alertsapi.GetFiringAlertsAllParams) middleware.Responder {
-		reqURL := fmt.Sprintf("%s/api/v2/alerts?active=true&inhibited=false&silenced=false&unprocessed=false", alertManagerURL)
-		req, err := http.NewRequestWithContext(params.HTTPRequest.Context(), http.MethodGet, reqURL, nil)
+		// 从 Alertmanager 获取全部活跃报警信息
+		amUrl := &url.URL{
+			Scheme:   "http",
+			Host:     address,
+			Path:     "/api/v2/alerts",
+			RawQuery: "active=true&inhibited=false&silenced=false&unprocessed=false",
+		}
+		amAlerts, err := getFiringAlertsFromAlertmanager(params.HTTPRequest.Context(), amUrl)
 		if err != nil {
-			return alertsapi.NewGetFiringAlertsAllInternalServerError().WithPayload(&models.StandardResponse{Detail: err.Error()})
-		}
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return alertsapi.NewGetFiringAlertsAllInternalServerError().WithPayload(&models.StandardResponse{Detail: err.Error()})
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			return alertsapi.NewGetFiringAlertsAllInternalServerError().WithPayload(&models.StandardResponse{Detail: fmt.Sprintf("alertmanager status %s", resp.Status)})
-		}
-
-		var amAlerts []amAlert
-		if err := json.NewDecoder(resp.Body).Decode(&amAlerts); err != nil {
-			return alertsapi.NewGetFiringAlertsAllInternalServerError().WithPayload(&models.StandardResponse{Detail: err.Error()})
+			return alertsapi.NewGetFiringAlertsAllInternalServerError().WithPayload(&models.StandardResponse{Detail: utils.StringPtr("无法从报警服务平台(Alertmanager)中获取当前活跃报警信息")})
 		}
 
 		sort.Slice(amAlerts, func(i, j int) bool {
@@ -92,10 +86,10 @@ func NewGetFiringAlertsAllHandler(client *http.Client, alertManagerURL string) a
 		for _, a := range amAlerts[start:end] {
 			alertsModel = append(alertsModel, &models.Alert{
 				Fingerprint:  a.Fingerprint,
-				Status:       a.Status.State,
+				Status:       "firing",
 				Startsat:     strfmt.DateTime(a.StartsAt),
-				Endsat:       strfmt.DateTime(a.EndsAt),
-				Generatorurl: a.GeneratorURL,
+				Endsat:       strfmt.DateTime(time.Time{}),
+				Generatorurl: "",
 				Labels:       a.Labels,
 				Annotaions:   a.Annotations,
 			})
@@ -117,10 +111,11 @@ func NewGetFiringAlertsAllHandler(client *http.Client, alertManagerURL string) a
 		}
 
 		payload := &alertsapi.GetFiringAlertsAllOKBody{
-			StandardResponse: models.StandardResponse{
+			CommonResponse: models.CommonResponse{
 				Count:    &total,
-				Next:     nextURI,
-				Previous: prevURI,
+				Next:     &nextURI,
+				Previous: &prevURI,
+				Detail:   utils.StringPtr("获取报警信息成功"),
 			},
 			Results: &alertsapi.GetFiringAlertsAllOKBodyGetFiringAlertsAllOKBodyAO1Results{
 				Statistic: &alertsapi.GetFiringAlertsAllOKBodyGetFiringAlertsAllOKBodyAO1ResultsStatistic{
@@ -134,4 +129,34 @@ func NewGetFiringAlertsAllHandler(client *http.Client, alertManagerURL string) a
 
 		return alertsapi.NewGetFiringAlertsAllOK().WithPayload(payload)
 	})
+}
+
+type Alerts []Alert
+
+type Alert struct {
+	Fingerprint string            `json:"fingerprint"`
+	StartsAt    time.Time         `json:"startsAt"`
+	Labels      map[string]string `json:"labels"`
+	Annotations map[string]string `json:"annotations"`
+}
+
+// getFiringAlertsFromAlertmanager 从 Alertmanager 获取全部 Active 报警信息.
+func getFiringAlertsFromAlertmanager(ctx context.Context, amUrl *url.URL) (Alerts, error) {
+	alerts := make(Alerts, 0)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, amUrl.String(), nil)
+	if err != nil {
+		return alerts, fmt.Errorf("无法创建请求体: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return alerts, fmt.Errorf("无法执行请求(%s): %w", req.URL.String(), err)
+	}
+	defer resp.Body.Close()
+
+	if err := json.NewDecoder(resp.Body).Decode(&alerts); err != nil {
+		return alerts, fmt.Errorf("无法解析响应数据: %w", err)
+	}
+
+	return alerts, nil
 }
