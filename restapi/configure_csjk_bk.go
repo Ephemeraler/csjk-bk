@@ -7,11 +7,10 @@ import (
 	"net/http"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/runtime/middleware"
 
+	alertsHandler "csjk-bk/internal/handlers/alerts"
 	"csjk-bk/pkg/errors"
 	"csjk-bk/restapi/operations"
-	"csjk-bk/restapi/operations/alerts"
 )
 
 //go:generate swagger generate server --target ../../csjk-bk --name CsjkBk --spec ../openapi/openapi.yaml --principal interface{}
@@ -22,7 +21,6 @@ func configureFlags(api *operations.CsjkBkAPI) {
 
 func configureAPI(api *operations.CsjkBkAPI) http.Handler {
 	// configure the api here
-	// api.ServeError = errors.ServeError
 	api.ServeError = errors.ServeError
 
 	// Set your custom logger if needed. Default one is log.Printf
@@ -38,19 +36,7 @@ func configureAPI(api *operations.CsjkBkAPI) http.Handler {
 	api.JSONConsumer = runtime.JSONConsumer()
 
 	api.JSONProducer = runtime.JSONProducer()
-
-	if api.AlertsGetFiringAlertsAllHandler == nil {
-		api.AlertsGetFiringAlertsAllHandler = alerts.GetFiringAlertsAllHandlerFunc(func(params alerts.GetFiringAlertsAllParams) middleware.Responder {
-			return middleware.NotImplemented("operation alerts.GetFiringAlertsAll has not yet been implemented")
-		})
-	}
-
-	// api.AlertsGetFiringAlertsAllHandler = alerts.GetFiringAlertsAllHandlerFunc(func(gfaap alerts.GetFiringAlertsAllParams) middleware.Responder {
-	// 	fmt.Printf("%+v\n", gfaap)
-	// 	payload := make(models.Alerts, 0)
-
-	// 	return alerts.NewGetFiringAlertsAllOK().WithPayload(&alerts.GetFiringAlertsAllOKBody{Results: payload})
-	// })
+	api.AlertsGetFiringAlertsAllHandler = alertsHandler.NewGetFiringAlertsAllHandler(http.DefaultClient, "http://alertmanagerip:port")
 
 	api.PreServerShutdown = func() {}
 
