@@ -1,0 +1,173 @@
+swagger: '2.0'
+
+info:
+  version: 0.0.1
+  title: CSJK API
+  contact:
+    email: hecheng@nscc-tj.cn
+  description: API of the CSJK Project.
+
+schemes:
+  - http
+
+consumes:
+  - application/json
+
+produces:
+  - application/json
+
+basePath: /api/v1
+
+
+paths:
+  /alerts/firing/all:
+    get:
+      tags: ["alerts"]
+      summary: 获取活跃报警
+      description: 以分页方式返回所有活跃报警信息, 该 API 为报警管理-活跃时间和报警页面中 "非分屏" 报警信息请求.
+      operationId: getFiringAlertsAll
+      parameters:
+        - in: query
+          name: page
+          description: 页码
+          type: integer
+          format: int64
+          default: 1
+          minimum: 1
+          required: true
+        - in: query
+          name: page_size 
+          description: 页数据条目数
+          type: integer
+          format: int64
+          default: 1
+          minimum: 1
+          maximum: 100
+          required: true
+      responses:
+        "200":
+          description: 成功响应
+          schema:
+            allOf:
+              - $ref: "#/definitions/StandardResponse"
+              - type: object
+                properties:
+                  results:
+                    type: object
+                    properties:
+                      statistic:
+                        type: object
+                        properties:
+                          inband:
+                            type: object
+                            additionalProperties:
+                              type: integer
+                              format: int64
+                          outband:
+                            type: object
+                            additionalProperties:
+                              type: integer
+                              format: int64
+                          event:
+                            type: object
+                            additionalProperties:
+                              type: integer
+                              format: int64
+                      alerts:
+                        $ref: "#/definitions/Alerts"
+          examples:
+            application/json:
+              count: 100
+              next: "/alerts/firing/all?page=2&page_size=10"
+              previous: ""
+              results:
+                statistic:
+                  inband: {"INFO": 10, "WARN": 7, "SEVERITY": 3, "DISASTER": 1}
+                  outband: {"unr": 1, "ucr": 2, "unc": 3, "lnc": 4, "lcr": 5, "lnr": 6}
+                  event: {"INFO": 10, "WARN": 7, "SEVERITY": 3, "DISASTER": 1}
+                alerts:
+                  - id: 1
+                    fingerprint: "abc123"
+                    status: "firing"
+                    startsat: "2025-08-20T02:50:00Z"
+                    endsat: null
+                    generatorurl: "http://example.com/alert1"
+                    responder: "alice"
+                    operation: "auto"
+              detail: ""
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: "#/definitions/StandardResponse"
+        "500":
+          description: 内部服务错误
+          schema:
+            $ref: "#/definitions/StandardResponse"
+
+definitions:
+  StandardResponse:
+    type: object
+    properties:
+      count:
+        type: integer
+        format: int64
+        description: 若请求为分页模式, 表示数据条目总数量, 否则为 -1
+        default: -1
+      next:
+        type: string
+        format: uri
+        description: 若请求为分页模式, 返回下一页请求的URL
+      previous:
+        type: string
+        format: uri
+        description: 若请求为分页模式, 返回上一页请求的URL
+      result:
+        type: object
+        description: 实际数据内容 (不同API返回的结构不同)
+      detail:
+        type: string
+        description: 若响应码非200, 将原因写到该字段
+  Alert:
+    type: object
+    properties:
+      ID:
+        type: integer
+        format: int64
+        description: 数据库中报警ID
+      Fingerprint:
+        type: string
+        description: 报警指纹
+      Status:
+        type: string
+        description: 报警状态
+      Startsat:
+        type: string
+        format: date-time
+        description: 报警开始时间
+      Endsat:
+        type: string
+        format: date-time
+        description: 报警结束时间
+      Generatorurl:
+        type: string
+        description: 报警生成链接
+      Responder:
+        type: string
+        description: 报警处理人
+      Operation:
+        type: string
+        description: 报警处理方式
+      Labels:
+        type: object
+        additionalProperties:
+          type: string
+        description: 报警标签
+      Annotaions:
+        type: object
+        additionalProperties:
+          type: string
+        description: 报警标签
+  Alerts:
+    type: array
+    items:
+      $ref: "#/definitions/Alert"
