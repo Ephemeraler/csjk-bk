@@ -19,7 +19,8 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	"csjk-bk/restapi/operations/alerts"
+	"csjk-bk/restapi/operations/alert"
+	"csjk-bk/restapi/operations/slurm"
 )
 
 // NewCsjkBkAPI creates a new CsjkBk instance
@@ -44,11 +45,14 @@ func NewCsjkBkAPI(spec *loads.Document) *CsjkBkAPI {
 
 		JSONProducer: runtime.JSONProducer(),
 
-		AlertsGetFiringAlertsAllHandler: alerts.GetFiringAlertsAllHandlerFunc(func(params alerts.GetFiringAlertsAllParams) middleware.Responder {
-			return middleware.NotImplemented("operation alerts.GetFiringAlertsAll has not yet been implemented")
+		AlertGetFiringAlertsHandler: alert.GetFiringAlertsHandlerFunc(func(params alert.GetFiringAlertsParams) middleware.Responder {
+			return middleware.NotImplemented("operation alert.GetFiringAlerts has not yet been implemented")
 		}),
-		AlertsGetFiringAlertsClassificationHandler: alerts.GetFiringAlertsClassificationHandlerFunc(func(params alerts.GetFiringAlertsClassificationParams) middleware.Responder {
-			return middleware.NotImplemented("operation alerts.GetFiringAlertsClassification has not yet been implemented")
+		SlurmGetSlurmUsersHandler: slurm.GetSlurmUsersHandlerFunc(func(params slurm.GetSlurmUsersParams) middleware.Responder {
+			return middleware.NotImplemented("operation slurm.GetSlurmUsers has not yet been implemented")
+		}),
+		AlertPostAlertHistoryHandler: alert.PostAlertHistoryHandlerFunc(func(params alert.PostAlertHistoryParams) middleware.Responder {
+			return middleware.NotImplemented("operation alert.PostAlertHistory has not yet been implemented")
 		}),
 	}
 }
@@ -86,10 +90,12 @@ type CsjkBkAPI struct {
 	//   - application/json
 	JSONProducer runtime.Producer
 
-	// AlertsGetFiringAlertsAllHandler sets the operation handler for the get firing alerts all operation
-	AlertsGetFiringAlertsAllHandler alerts.GetFiringAlertsAllHandler
-	// AlertsGetFiringAlertsClassificationHandler sets the operation handler for the get firing alerts classification operation
-	AlertsGetFiringAlertsClassificationHandler alerts.GetFiringAlertsClassificationHandler
+	// AlertGetFiringAlertsHandler sets the operation handler for the get firing alerts operation
+	AlertGetFiringAlertsHandler alert.GetFiringAlertsHandler
+	// SlurmGetSlurmUsersHandler sets the operation handler for the get slurm users operation
+	SlurmGetSlurmUsersHandler slurm.GetSlurmUsersHandler
+	// AlertPostAlertHistoryHandler sets the operation handler for the post alert history operation
+	AlertPostAlertHistoryHandler alert.PostAlertHistoryHandler
 
 	// ServeError is called when an error is received, there is a default handler
 	// but you can set your own with this
@@ -167,11 +173,14 @@ func (o *CsjkBkAPI) Validate() error {
 		unregistered = append(unregistered, "JSONProducer")
 	}
 
-	if o.AlertsGetFiringAlertsAllHandler == nil {
-		unregistered = append(unregistered, "alerts.GetFiringAlertsAllHandler")
+	if o.AlertGetFiringAlertsHandler == nil {
+		unregistered = append(unregistered, "alert.GetFiringAlertsHandler")
 	}
-	if o.AlertsGetFiringAlertsClassificationHandler == nil {
-		unregistered = append(unregistered, "alerts.GetFiringAlertsClassificationHandler")
+	if o.SlurmGetSlurmUsersHandler == nil {
+		unregistered = append(unregistered, "slurm.GetSlurmUsersHandler")
+	}
+	if o.AlertPostAlertHistoryHandler == nil {
+		unregistered = append(unregistered, "alert.PostAlertHistoryHandler")
 	}
 
 	if len(unregistered) > 0 {
@@ -264,11 +273,15 @@ func (o *CsjkBkAPI) initHandlerCache() {
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
-	o.handlers["GET"]["/alerts/firing/all"] = alerts.NewGetFiringAlertsAll(o.context, o.AlertsGetFiringAlertsAllHandler)
+	o.handlers["GET"]["/alerts/firing"] = alert.NewGetFiringAlerts(o.context, o.AlertGetFiringAlertsHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
-	o.handlers["GET"]["/alerts/firing/classification"] = alerts.NewGetFiringAlertsClassification(o.context, o.AlertsGetFiringAlertsClassificationHandler)
+	o.handlers["GET"]["/slurm/users"] = slurm.NewGetSlurmUsers(o.context, o.SlurmGetSlurmUsersHandler)
+	if o.handlers["POST"] == nil {
+		o.handlers["POST"] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/alerts/history"] = alert.NewPostAlertHistory(o.context, o.AlertPostAlertHistoryHandler)
 }
 
 // Serve creates a http handler to serve the API over HTTP

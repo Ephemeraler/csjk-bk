@@ -38,15 +38,25 @@ func init() {
   },
   "basePath": "/api/v1",
   "paths": {
-    "/alerts/firing/all": {
+    "/alerts/firing": {
       "get": {
-        "description": "以分页方式返回所有活跃报警信息, 该 API 为报警管理-活跃时间和报警页面中 \"非分屏\" 报警信息请求.",
+        "description": "前置条件:\n  1) 不同报警/事件汇集点在 Alertmanager. 使用标签 source 字段标识报警来源, 如带内(inband)、带外(outband)、事件(event);\n  2) 报警标签必须包含: source(报警来源), severity(报警级别, 不同来源解释不同级别);\n\n使用方式:\n- 报警管理.活跃事件和报警\n  - 分屏显示(开): 不同类别报警对应的屏与报警数量统计数据通过不同 API 请求. 示例请求带外报警数据: GET \u003cbasePath\u003e/alerts/firing?filter=souorce=outband\u0026page=\u0026page_size=\n  - 分屏显示(关): 无需传递filter参数, 所有数据统一返回.\n",
         "tags": [
-          "alerts"
+          "alert"
         ],
-        "summary": "获取活跃报警",
-        "operationId": "getFiringAlertsAll",
+        "summary": "获取活跃报警信息.",
+        "operationId": "getFiringAlerts",
         "parameters": [
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "description": "用于筛选警报的匹配列表.",
+            "name": "filter",
+            "in": "query"
+          },
           {
             "minimum": 1,
             "type": "integer",
@@ -58,11 +68,11 @@ func init() {
             "required": true
           },
           {
-            "maximum": 100,
+            "maximum": 1000,
             "minimum": 1,
             "type": "integer",
             "format": "int64",
-            "default": 1,
+            "default": 10,
             "description": "页数据条目数",
             "name": "page_size",
             "in": "query",
@@ -71,7 +81,7 @@ func init() {
         ],
         "responses": {
           "200": {
-            "description": "成功响应",
+            "description": "获取活跃报警数据",
             "schema": {
               "allOf": [
                 {
@@ -86,7 +96,7 @@ func init() {
                         "alerts": {
                           "$ref": "#/definitions/Alerts"
                         },
-                        "statistic": {
+                        "severity_count": {
                           "type": "object",
                           "properties": {
                             "event": {
@@ -127,10 +137,19 @@ func init() {
                 "results": {
                   "alerts": [
                     {
+                      "annotations": {
+                        "description": "happy every day",
+                        "summary": "happy every day"
+                      },
                       "endsat": null,
                       "fingerprint": "abc123",
                       "generatorurl": "http://example.com/alert1",
                       "id": 1,
+                      "labels": {
+                        "cluster": "test",
+                        "severity": "INFO",
+                        "source": "inband"
+                      },
                       "operation": "auto",
                       "responder": "alice",
                       "startsat": "2025-08-20T02:50:00Z",
@@ -178,79 +197,83 @@ func init() {
         }
       }
     },
-    "/alerts/firing/classification": {
-      "get": {
-        "description": "以分页方式返回所有活跃报警信息, 该 API 为报警管理-活跃时间和报警页面中 \"分屏\" 报警信息请求.",
+    "/alerts/history": {
+      "post": {
+        "description": "前置条件:\n  1) 数据来源统一, 所有事件与报警汇聚点为 Alertmanager, 均存储在 PG.Alert 相关表中;\n  2) 前端使用的标签名与标签对应值返回应该与报警内容信息保持一致或者能够唯一映射;\n\n使用方式:\n  为保持良好扩展性, 该 API 不会固定具体筛选Labels Key与Annotations Key. 均由前端自己确认 Key 与 Value, 传递给后端进行筛选.\n  - 报警管理.历史事件和报警\n    - 分屏显示(开): 该 API 均可使用, 只需传递对应筛选参数即可.\n    - 分屏显示(关): 不同分屏表示的类别需要传递必须参数, 如带内报警, 则需要在body.labels中传递 source: [\"inband\"].\n",
         "tags": [
-          "alerts"
+          "alert"
         ],
-        "summary": "获取活跃报警",
-        "operationId": "getFiringAlertsClassification",
+        "summary": "获取历史报警信息.",
+        "operationId": "postAlertHistory",
         "parameters": [
           {
-            "enum": [
-              "inband",
-              "outband",
-              "event"
-            ],
-            "type": "string",
-            "description": "分类名称, 例如 \"inband\", \"outband\", \"event\"",
-            "name": "classification",
-            "in": "query",
-            "required": true
-          },
-          {
-            "minimum": 1,
-            "type": "integer",
-            "format": "int64",
-            "default": 1,
-            "description": "页码",
-            "name": "page",
-            "in": "query",
-            "required": true
-          },
-          {
-            "maximum": 100,
-            "minimum": 1,
-            "type": "integer",
-            "format": "int64",
-            "default": 1,
-            "description": "页数据条目数",
-            "name": "page_size",
-            "in": "query",
-            "required": true
+            "description": "查询参数",
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "annotations": {
+                  "description": "用于筛选警报的注解键值对, 支持多个值",
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "end": {
+                  "description": "查询结束时间",
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "labels": {
+                  "description": "用于筛选警报的标签键值对, 支持多个值",
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "page": {
+                  "description": "页码",
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "page_size": {
+                  "description": "页数据条目数",
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "start": {
+                  "description": "查询开始时间",
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "status": {
+                  "description": "报警状态, 可选值包括 firing, resolved",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "成功响应",
+            "description": "获取活跃报警数据",
             "schema": {
               "allOf": [
                 {
                   "$ref": "#/definitions/CommonResponse"
                 },
                 {
-                  "type": "object",
-                  "properties": {
-                    "results": {
-                      "type": "object",
-                      "properties": {
-                        "alerts": {
-                          "$ref": "#/definitions/Alerts"
-                        },
-                        "statistic": {
-                          "type": "object",
-                          "additionalProperties": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "type": "integer",
-                              "format": "int64"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
+                  "$ref": "#/definitions/Alerts"
                 }
               ]
             },
@@ -258,30 +281,29 @@ func init() {
               "application/json": {
                 "count": 100,
                 "detail": "",
-                "next": "/alerts/firing/all?page=2\u0026page_size=10",
+                "next": "",
                 "previous": "",
-                "results": {
-                  "alerts": [
-                    {
-                      "endsat": null,
-                      "fingerprint": "abc123",
-                      "generatorurl": "http://example.com/alert1",
-                      "id": 1,
-                      "operation": "auto",
-                      "responder": "alice",
-                      "startsat": "2025-08-20T02:50:00Z",
-                      "status": "firing"
-                    }
-                  ],
-                  "statistic": {
-                    "inband": {
-                      "DISASTER": 1,
-                      "INFO": 10,
-                      "SEVERITY": 3,
-                      "WARN": 7
-                    }
+                "results": [
+                  {
+                    "annotations": {
+                      "description": "happy every day",
+                      "summary": "happy every day"
+                    },
+                    "endsat": "",
+                    "fingerprint": "abc123",
+                    "generatorurl": "http://example.com/alert1",
+                    "id": 1,
+                    "labels": {
+                      "cluster": "test",
+                      "severity": "INFO",
+                      "source": "inband"
+                    },
+                    "operation": "auto",
+                    "responder": "alice",
+                    "startsat": "2025-08-20T02:50:00Z",
+                    "status": "firing"
                   }
-                }
+                ]
               }
             }
           },
@@ -295,6 +317,73 @@ func init() {
             "description": "内部服务错误",
             "schema": {
               "$ref": "#/definitions/StandardResponse"
+            }
+          }
+        }
+      }
+    },
+    "/slurm/users": {
+      "get": {
+        "description": "获取 slurm 所有用户信息, 以列表形式返回. 该 API 用户\"资源管理-资源监控, 过滤面板中用户控件\". 该 API 由科大提供.",
+        "tags": [
+          "slurm",
+          "kd"
+        ],
+        "summary": "获取 slurm 所有用户信息, 以列表形式返回.",
+        "operationId": "getSlurmUsers",
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CommonResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "description": "用户ID, 对应Linux系统UID.",
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "name": {
+                            "description": "用户名称",
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "examples": {
+              "application/json": {
+                "count": "100",
+                "detail": "",
+                "next": "",
+                "previous": "",
+                "results": [
+                  {
+                    "id": 10001,
+                    "name": "muqali"
+                  },
+                  {
+                    "id": 10002,
+                    "name": "hc"
+                  },
+                  {
+                    "id": 10003,
+                    "name": "txy"
+                  }
+                ]
+              }
             }
           }
         }
@@ -452,15 +541,25 @@ func init() {
   },
   "basePath": "/api/v1",
   "paths": {
-    "/alerts/firing/all": {
+    "/alerts/firing": {
       "get": {
-        "description": "以分页方式返回所有活跃报警信息, 该 API 为报警管理-活跃时间和报警页面中 \"非分屏\" 报警信息请求.",
+        "description": "前置条件:\n  1) 不同报警/事件汇集点在 Alertmanager. 使用标签 source 字段标识报警来源, 如带内(inband)、带外(outband)、事件(event);\n  2) 报警标签必须包含: source(报警来源), severity(报警级别, 不同来源解释不同级别);\n\n使用方式:\n- 报警管理.活跃事件和报警\n  - 分屏显示(开): 不同类别报警对应的屏与报警数量统计数据通过不同 API 请求. 示例请求带外报警数据: GET \u003cbasePath\u003e/alerts/firing?filter=souorce=outband\u0026page=\u0026page_size=\n  - 分屏显示(关): 无需传递filter参数, 所有数据统一返回.\n",
         "tags": [
-          "alerts"
+          "alert"
         ],
-        "summary": "获取活跃报警",
-        "operationId": "getFiringAlertsAll",
+        "summary": "获取活跃报警信息.",
+        "operationId": "getFiringAlerts",
         "parameters": [
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "description": "用于筛选警报的匹配列表.",
+            "name": "filter",
+            "in": "query"
+          },
           {
             "minimum": 1,
             "type": "integer",
@@ -472,11 +571,11 @@ func init() {
             "required": true
           },
           {
-            "maximum": 100,
+            "maximum": 1000,
             "minimum": 1,
             "type": "integer",
             "format": "int64",
-            "default": 1,
+            "default": 10,
             "description": "页数据条目数",
             "name": "page_size",
             "in": "query",
@@ -485,7 +584,7 @@ func init() {
         ],
         "responses": {
           "200": {
-            "description": "成功响应",
+            "description": "获取活跃报警数据",
             "schema": {
               "allOf": [
                 {
@@ -500,7 +599,7 @@ func init() {
                         "alerts": {
                           "$ref": "#/definitions/Alerts"
                         },
-                        "statistic": {
+                        "severity_count": {
                           "type": "object",
                           "properties": {
                             "event": {
@@ -541,10 +640,19 @@ func init() {
                 "results": {
                   "alerts": [
                     {
+                      "annotations": {
+                        "description": "happy every day",
+                        "summary": "happy every day"
+                      },
                       "endsat": null,
                       "fingerprint": "abc123",
                       "generatorurl": "http://example.com/alert1",
                       "id": 1,
+                      "labels": {
+                        "cluster": "test",
+                        "severity": "INFO",
+                        "source": "inband"
+                      },
                       "operation": "auto",
                       "responder": "alice",
                       "startsat": "2025-08-20T02:50:00Z",
@@ -592,79 +700,83 @@ func init() {
         }
       }
     },
-    "/alerts/firing/classification": {
-      "get": {
-        "description": "以分页方式返回所有活跃报警信息, 该 API 为报警管理-活跃时间和报警页面中 \"分屏\" 报警信息请求.",
+    "/alerts/history": {
+      "post": {
+        "description": "前置条件:\n  1) 数据来源统一, 所有事件与报警汇聚点为 Alertmanager, 均存储在 PG.Alert 相关表中;\n  2) 前端使用的标签名与标签对应值返回应该与报警内容信息保持一致或者能够唯一映射;\n\n使用方式:\n  为保持良好扩展性, 该 API 不会固定具体筛选Labels Key与Annotations Key. 均由前端自己确认 Key 与 Value, 传递给后端进行筛选.\n  - 报警管理.历史事件和报警\n    - 分屏显示(开): 该 API 均可使用, 只需传递对应筛选参数即可.\n    - 分屏显示(关): 不同分屏表示的类别需要传递必须参数, 如带内报警, 则需要在body.labels中传递 source: [\"inband\"].\n",
         "tags": [
-          "alerts"
+          "alert"
         ],
-        "summary": "获取活跃报警",
-        "operationId": "getFiringAlertsClassification",
+        "summary": "获取历史报警信息.",
+        "operationId": "postAlertHistory",
         "parameters": [
           {
-            "enum": [
-              "inband",
-              "outband",
-              "event"
-            ],
-            "type": "string",
-            "description": "分类名称, 例如 \"inband\", \"outband\", \"event\"",
-            "name": "classification",
-            "in": "query",
-            "required": true
-          },
-          {
-            "minimum": 1,
-            "type": "integer",
-            "format": "int64",
-            "default": 1,
-            "description": "页码",
-            "name": "page",
-            "in": "query",
-            "required": true
-          },
-          {
-            "maximum": 100,
-            "minimum": 1,
-            "type": "integer",
-            "format": "int64",
-            "default": 1,
-            "description": "页数据条目数",
-            "name": "page_size",
-            "in": "query",
-            "required": true
+            "description": "查询参数",
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "annotations": {
+                  "description": "用于筛选警报的注解键值对, 支持多个值",
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "end": {
+                  "description": "查询结束时间",
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "labels": {
+                  "description": "用于筛选警报的标签键值对, 支持多个值",
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "page": {
+                  "description": "页码",
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "page_size": {
+                  "description": "页数据条目数",
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "start": {
+                  "description": "查询开始时间",
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "status": {
+                  "description": "报警状态, 可选值包括 firing, resolved",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "成功响应",
+            "description": "获取活跃报警数据",
             "schema": {
               "allOf": [
                 {
                   "$ref": "#/definitions/CommonResponse"
                 },
                 {
-                  "type": "object",
-                  "properties": {
-                    "results": {
-                      "type": "object",
-                      "properties": {
-                        "alerts": {
-                          "$ref": "#/definitions/Alerts"
-                        },
-                        "statistic": {
-                          "type": "object",
-                          "additionalProperties": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "type": "integer",
-                              "format": "int64"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
+                  "$ref": "#/definitions/Alerts"
                 }
               ]
             },
@@ -672,30 +784,29 @@ func init() {
               "application/json": {
                 "count": 100,
                 "detail": "",
-                "next": "/alerts/firing/all?page=2\u0026page_size=10",
+                "next": "",
                 "previous": "",
-                "results": {
-                  "alerts": [
-                    {
-                      "endsat": null,
-                      "fingerprint": "abc123",
-                      "generatorurl": "http://example.com/alert1",
-                      "id": 1,
-                      "operation": "auto",
-                      "responder": "alice",
-                      "startsat": "2025-08-20T02:50:00Z",
-                      "status": "firing"
-                    }
-                  ],
-                  "statistic": {
-                    "inband": {
-                      "DISASTER": 1,
-                      "INFO": 10,
-                      "SEVERITY": 3,
-                      "WARN": 7
-                    }
+                "results": [
+                  {
+                    "annotations": {
+                      "description": "happy every day",
+                      "summary": "happy every day"
+                    },
+                    "endsat": "",
+                    "fingerprint": "abc123",
+                    "generatorurl": "http://example.com/alert1",
+                    "id": 1,
+                    "labels": {
+                      "cluster": "test",
+                      "severity": "INFO",
+                      "source": "inband"
+                    },
+                    "operation": "auto",
+                    "responder": "alice",
+                    "startsat": "2025-08-20T02:50:00Z",
+                    "status": "firing"
                   }
-                }
+                ]
               }
             }
           },
@@ -709,6 +820,62 @@ func init() {
             "description": "内部服务错误",
             "schema": {
               "$ref": "#/definitions/StandardResponse"
+            }
+          }
+        }
+      }
+    },
+    "/slurm/users": {
+      "get": {
+        "description": "获取 slurm 所有用户信息, 以列表形式返回. 该 API 用户\"资源管理-资源监控, 过滤面板中用户控件\". 该 API 由科大提供.",
+        "tags": [
+          "slurm",
+          "kd"
+        ],
+        "summary": "获取 slurm 所有用户信息, 以列表形式返回.",
+        "operationId": "getSlurmUsers",
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CommonResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/ResultsItems0"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "examples": {
+              "application/json": {
+                "count": "100",
+                "detail": "",
+                "next": "",
+                "previous": "",
+                "results": [
+                  {
+                    "id": 10001,
+                    "name": "muqali"
+                  },
+                  {
+                    "id": 10002,
+                    "name": "hc"
+                  },
+                  {
+                    "id": 10003,
+                    "name": "txy"
+                  }
+                ]
+              }
             }
           }
         }
@@ -807,13 +974,13 @@ func init() {
         }
       }
     },
-    "GetFiringAlertsAllOKBodyAO1Results": {
+    "GetFiringAlertsOKBodyAO1Results": {
       "type": "object",
       "properties": {
         "alerts": {
           "$ref": "#/definitions/Alerts"
         },
-        "statistic": {
+        "severity_count": {
           "type": "object",
           "properties": {
             "event": {
@@ -841,7 +1008,7 @@ func init() {
         }
       }
     },
-    "GetFiringAlertsAllOKBodyAO1ResultsStatistic": {
+    "GetFiringAlertsOKBodyAO1ResultsSeverityCount": {
       "type": "object",
       "properties": {
         "event": {
@@ -867,21 +1034,17 @@ func init() {
         }
       }
     },
-    "GetFiringAlertsClassificationOKBodyAO1Results": {
+    "ResultsItems0": {
       "type": "object",
       "properties": {
-        "alerts": {
-          "$ref": "#/definitions/Alerts"
+        "id": {
+          "description": "用户ID, 对应Linux系统UID.",
+          "type": "integer",
+          "format": "int64"
         },
-        "statistic": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
+        "name": {
+          "description": "用户名称",
+          "type": "string"
         }
       }
     },

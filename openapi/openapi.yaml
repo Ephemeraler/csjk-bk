@@ -20,33 +20,49 @@ basePath: /api/v1
 
 
 paths:
-  /alerts/firing/all:
+  /alerts/firing:
     get:
-      tags: ["alerts"]
-      summary: 获取活跃报警
-      description: 以分页方式返回所有活跃报警信息, 该 API 为报警管理-活跃时间和报警页面中 "非分屏" 报警信息请求.
-      operationId: getFiringAlertsAll
+      tags: ["alert"]
+      operationId: getFiringAlerts
+      summary: 获取活跃报警信息.
+      description: |
+        前置条件:
+          1) 不同报警/事件汇集点在 Alertmanager. 使用标签 source 字段标识报警来源, 如带内(inband)、带外(outband)、事件(event);
+          2) 报警标签必须包含: source(报警来源), severity(报警级别, 不同来源解释不同级别);
+        
+        使用方式:
+        - 报警管理.活跃事件和报警
+          - 分屏显示(开): 不同类别报警对应的屏与报警数量统计数据通过不同 API 请求. 示例请求带外报警数据: GET <basePath>/alerts/firing?filter=souorce=outband&page=&page_size=
+          - 分屏显示(关): 无需传递filter参数, 所有数据统一返回.
       parameters:
+        - in: query
+          name: filter
+          description: 用于筛选警报的匹配列表.
+          required: false
+          type: array
+          collectionFormat: multi
+          items:
+            type: string
         - in: query
           name: page
           description: 页码
+          required: true
+          minimum: 1
+          default: 1
           type: integer
           format: int64
-          default: 1
-          minimum: 1
-          required: true
         - in: query
-          name: page_size 
+          name: page_size
           description: 页数据条目数
+          required: true
+          minimum: 1
+          maximum: 1000
+          default: 10
           type: integer
           format: int64
-          default: 1
-          minimum: 1
-          maximum: 100
-          required: true
       responses:
         "200":
-          description: 成功响应
+          description: 获取活跃报警数据
           schema:
             allOf:
               - $ref: "#/definitions/CommonResponse"
@@ -55,7 +71,7 @@ paths:
                   results:
                     type: object
                     properties:
-                      statistic:
+                      severity_count:
                         type: object
                         properties:
                           inband:
@@ -94,6 +110,13 @@ paths:
                     generatorurl: "http://example.com/alert1"
                     responder: "alice"
                     operation: "auto"
+                    labels:
+                      severity: INFO
+                      source: inband
+                      cluster: test
+                    annotations:
+                      summary: happy every day
+                      description: happy every day
               detail: ""
         "400":
           description: 请求参数错误
@@ -103,36 +126,108 @@ paths:
           description: 内部服务错误
           schema:
             $ref: "#/definitions/StandardResponse"
-  /alerts/firing/classification:
-    get:
-      tags: ["alerts"]
-      summary: 获取活跃报警
-      description: 以分页方式返回所有活跃报警信息, 该 API 为报警管理-活跃时间和报警页面中 "分屏" 报警信息请求.
-      operationId: getFiringAlertsClassification
+
+  /alerts/history:
+    post:
+      tags: ["alert"]
+      operationId: postAlertHistory
+      summary: 获取历史报警信息.
+      description: |
+        前置条件:
+          1) 数据来源统一, 所有事件与报警汇聚点为 Alertmanager, 均存储在 PG.Alert 相关表中;
+          2) 前端使用的标签名与标签对应值返回应该与报警内容信息保持一致或者能够唯一映射;
+        
+        使用方式:
+          为保持良好扩展性, 该 API 不会固定具体筛选Labels Key与Annotations Key. 均由前端自己确认 Key 与 Value, 传递给后端进行筛选.
+          - 报警管理.历史事件和报警
+            - 分屏显示(开): 该 API 均可使用, 只需传递对应筛选参数即可.
+            - 分屏显示(关): 不同分屏表示的类别需要传递必须参数, 如带内报警, 则需要在body.labels中传递 source: ["inband"].
       parameters:
-        - in: query
-          name: classification
-          enum: ["inband", "outband", "event"]
-          description: 分类名称, 例如 "inband", "outband", "event"
-          type: string
-          required: true
-        - in: query
-          name: page
-          description: 页码
-          type: integer
-          format: int64
-          default: 1
-          minimum: 1
-          required: true
-        - in: query
-          name: page_size 
-          description: 页数据条目数
-          type: integer
-          format: int64
-          default: 1
-          minimum: 1
-          maximum: 100
-          required: true
+        - in: body
+          name: body
+          description: 查询参数
+          schema:
+            type: object
+            properties:
+              status:
+                type: array
+                items:
+                  type: string
+                  # emun: ["firing", "resolved"]
+                description: 报警状态, 可选值包括 firing, resolved
+              start:
+                type: string
+                format: date-time
+                description: 查询开始时间
+              end:
+                type: string
+                format: date-time
+                description: 查询结束时间
+              labels:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+                description: 用于筛选警报的标签键值对, 支持多个值
+              annotations:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+                description: 用于筛选警报的注解键值对, 支持多个值
+              page:
+                type: integer
+                format: int64
+                description: 页码
+              page_size:
+                type: integer
+                format: int64
+                description: 页数据条目数
+      responses:
+        "200":
+          description: 获取活跃报警数据
+          schema:
+            allOf:
+              - $ref: "#/definitions/CommonResponse"
+              - $ref: "#/definitions/Alerts"
+          examples:
+            application/json:
+              count: 100
+              next: ""
+              previous: ""
+              results:
+                  - id: 1
+                    fingerprint: "abc123"
+                    status: "firing"
+                    startsat: "2025-08-20T02:50:00Z"
+                    endsat: ""
+                    generatorurl: "http://example.com/alert1"
+                    responder: "alice"
+                    operation: "auto"
+                    labels:
+                      severity: INFO
+                      source: inband
+                      cluster: test
+                    annotations:
+                      summary: happy every day
+                      description: happy every day
+              detail: ""
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: "#/definitions/StandardResponse"
+        "500":
+          description: 内部服务错误
+          schema:
+            $ref: "#/definitions/StandardResponse"
+  /slurm/users:
+    get:
+      tags: ["slurm", "kd"]
+      operationId: getSlurmUsers
+      summary: 获取 slurm 所有用户信息, 以列表形式返回.
+      description: 获取 slurm 所有用户信息, 以列表形式返回. 该 API 用户"资源管理-资源监控, 过滤面板中用户控件". 该 API 由科大提供.
       responses:
         "200":
           description: 成功响应
@@ -142,43 +237,31 @@ paths:
               - type: object
                 properties:
                   results:
-                    type: object
-                    properties:
-                      statistic:
-                        type: object
-                        additionalProperties:
-                          type: object
-                          additionalProperties:
-                            type: integer
-                            format: int64
-                      alerts:
-                        $ref: "#/definitions/Alerts"
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          description: 用户名称
+                        id:
+                          type: integer
+                          format: int64
+                          description: 用户ID, 对应Linux系统UID.
           examples:
             application/json:
-              count: 100
-              next: "/alerts/firing/all?page=2&page_size=10"
+              count: "100"
+              next: ""
               previous: ""
               results:
-                statistic:
-                  inband: {"INFO": 10, "WARN": 7, "SEVERITY": 3, "DISASTER": 1}
-                alerts:
-                  - id: 1
-                    fingerprint: "abc123"
-                    status: "firing"
-                    startsat: "2025-08-20T02:50:00Z"
-                    endsat: null
-                    generatorurl: "http://example.com/alert1"
-                    responder: "alice"
-                    operation: "auto"
+                - name: "muqali"
+                  id: 10001
+                - name: "hc"
+                  id: 10002
+                - name: "txy"
+                  id: 10003
               detail: ""
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: "#/definitions/StandardResponse"
-        "500":
-          description: 内部服务错误
-          schema:
-            $ref: "#/definitions/StandardResponse"
+
 
 definitions:
   StandardResponse:

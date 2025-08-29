@@ -4,11 +4,13 @@ package restapi
 
 import (
 	"crypto/tls"
+	"net"
 	"net/http"
+	"time"
 
 	"github.com/go-openapi/runtime"
 
-	alertsHandler "csjk-bk/internal/handlers/alerts"
+	"csjk-bk/internal/handlers/alerts"
 	"csjk-bk/pkg/errors"
 	"csjk-bk/restapi/operations"
 )
@@ -37,8 +39,18 @@ func configureAPI(api *operations.CsjkBkAPI) http.Handler {
 
 	api.JSONProducer = runtime.JSONProducer()
 
-	api.AlertsGetFiringAlertsAllHandler = alertsHandler.NewGetFiringAlertsAllHandler(http.DefaultClient, "192.168.2.150:19093")
-	api.AlertsGetFiringAlertsClassificationHandler = alertsHandler.NewGetFiringAlertsClassificationHandler(http.DefaultClient, "192.168.2.150:19093")
+	client := &http.Client{
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   5 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			TLSHandshakeTimeout: 5 * time.Second,
+		},
+	}
+
+	// Handlers
+	api.AlertGetFiringAlertsHandler = alerts.NewGetFiringAlertsHandler(client, "192.168.2.150:19093")
 
 	api.PreServerShutdown = func() {}
 
