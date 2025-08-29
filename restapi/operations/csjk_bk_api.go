@@ -45,6 +45,12 @@ func NewCsjkBkAPI(spec *loads.Document) *CsjkBkAPI {
 
 		JSONProducer: runtime.JSONProducer(),
 
+		AlertGetAlertLabelNamesHandler: alert.GetAlertLabelNamesHandlerFunc(func(params alert.GetAlertLabelNamesParams) middleware.Responder {
+			return middleware.NotImplemented("operation alert.GetAlertLabelNames has not yet been implemented")
+		}),
+		AlertGetAlertLabelsHandler: alert.GetAlertLabelsHandlerFunc(func(params alert.GetAlertLabelsParams) middleware.Responder {
+			return middleware.NotImplemented("operation alert.GetAlertLabels has not yet been implemented")
+		}),
 		AlertGetFiringAlertsHandler: alert.GetFiringAlertsHandlerFunc(func(params alert.GetFiringAlertsParams) middleware.Responder {
 			return middleware.NotImplemented("operation alert.GetFiringAlerts has not yet been implemented")
 		}),
@@ -90,6 +96,10 @@ type CsjkBkAPI struct {
 	//   - application/json
 	JSONProducer runtime.Producer
 
+	// AlertGetAlertLabelNamesHandler sets the operation handler for the get alert label names operation
+	AlertGetAlertLabelNamesHandler alert.GetAlertLabelNamesHandler
+	// AlertGetAlertLabelsHandler sets the operation handler for the get alert labels operation
+	AlertGetAlertLabelsHandler alert.GetAlertLabelsHandler
 	// AlertGetFiringAlertsHandler sets the operation handler for the get firing alerts operation
 	AlertGetFiringAlertsHandler alert.GetFiringAlertsHandler
 	// SlurmGetSlurmUsersHandler sets the operation handler for the get slurm users operation
@@ -173,6 +183,12 @@ func (o *CsjkBkAPI) Validate() error {
 		unregistered = append(unregistered, "JSONProducer")
 	}
 
+	if o.AlertGetAlertLabelNamesHandler == nil {
+		unregistered = append(unregistered, "alert.GetAlertLabelNamesHandler")
+	}
+	if o.AlertGetAlertLabelsHandler == nil {
+		unregistered = append(unregistered, "alert.GetAlertLabelsHandler")
+	}
 	if o.AlertGetFiringAlertsHandler == nil {
 		unregistered = append(unregistered, "alert.GetFiringAlertsHandler")
 	}
@@ -270,6 +286,14 @@ func (o *CsjkBkAPI) initHandlerCache() {
 		o.handlers = make(map[string]map[string]http.Handler)
 	}
 
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/alerts/labels"] = alert.NewGetAlertLabelNames(o.context, o.AlertGetAlertLabelNamesHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/alerts/label/{labelname}/values"] = alert.NewGetAlertLabels(o.context, o.AlertGetAlertLabelsHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}

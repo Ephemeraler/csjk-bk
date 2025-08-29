@@ -222,6 +222,87 @@ paths:
           description: 内部服务错误
           schema:
             $ref: "#/definitions/StandardResponse"
+  
+  /alerts/labels:
+    get:
+      tags: ["alert"]
+      operationId: getAlertLabelNames
+      summary: 获取所有报警标签的名称.
+      description: 获取所有报警标签的名称.
+      responses:
+        "200":
+          description: 成功响应
+          schema:
+            allOf:
+              - $ref: "#/definitions/CommonResponse"
+              - type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: string
+          examples:
+            application/json:
+              count: -1
+              next: ""
+              previous: ""
+              results:
+                - "severity"
+                - "source"
+                - "cluster"
+              detail: ""
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: "#/definitions/StandardResponse"
+        "500":
+          description: 内部服务错误
+          schema:
+            $ref: "#/definitions/StandardResponse"
+
+  /alerts/label/{labelname}/values:
+    get:
+      tags: ["alert"]
+      operationId: getAlertLabels
+      summary: 获取所有报警标签的所有标签值.
+      description: 获取所有报警标签的所有标签值.
+      parameters:
+        - in: path
+          name: labelname
+          description: 标签名称
+          required: true
+          type: string
+      responses:
+        "200":
+          description: 成功响应
+          schema:
+            allOf:
+              - $ref: "#/definitions/CommonResponse"
+              - type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: string
+          examples:
+            application/json:
+              count: -1
+              next: ""
+              previous: ""
+              results:
+                - "severity"
+                - "source"
+                - "cluster"
+              detail: ""
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: "#/definitions/StandardResponse"
+        "500":
+          description: 内部服务错误
+          schema:
+            $ref: "#/definitions/StandardResponse"
+
   /slurm/users:
     get:
       tags: ["slurm", "kd"]

@@ -322,6 +322,131 @@ func init() {
         }
       }
     },
+    "/alerts/label/{labelname}/values": {
+      "get": {
+        "description": "获取所有报警标签的所有标签值.",
+        "tags": [
+          "alert"
+        ],
+        "summary": "获取所有报警标签的所有标签值.",
+        "operationId": "getAlertLabels",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "标签名称",
+            "name": "labelname",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CommonResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "examples": {
+              "application/json": {
+                "count": -1,
+                "detail": "",
+                "next": "",
+                "previous": "",
+                "results": [
+                  "severity",
+                  "source",
+                  "cluster"
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          },
+          "500": {
+            "description": "内部服务错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          }
+        }
+      }
+    },
+    "/alerts/labels": {
+      "get": {
+        "description": "获取所有报警标签的名称.",
+        "tags": [
+          "alert"
+        ],
+        "summary": "获取所有报警标签的名称.",
+        "operationId": "getAlertLabelNames",
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CommonResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "examples": {
+              "application/json": {
+                "count": -1,
+                "detail": "",
+                "next": "",
+                "previous": "",
+                "results": [
+                  "severity",
+                  "source",
+                  "cluster"
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          },
+          "500": {
+            "description": "内部服务错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          }
+        }
+      }
+    },
     "/slurm/users": {
       "get": {
         "description": "获取 slurm 所有用户信息, 以列表形式返回. 该 API 用户\"资源管理-资源监控, 过滤面板中用户控件\". 该 API 由科大提供.",
@@ -806,6 +931,131 @@ func init() {
                     "startsat": "2025-08-20T02:50:00Z",
                     "status": "firing"
                   }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          },
+          "500": {
+            "description": "内部服务错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          }
+        }
+      }
+    },
+    "/alerts/label/{labelname}/values": {
+      "get": {
+        "description": "获取所有报警标签的所有标签值.",
+        "tags": [
+          "alert"
+        ],
+        "summary": "获取所有报警标签的所有标签值.",
+        "operationId": "getAlertLabels",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "标签名称",
+            "name": "labelname",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CommonResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "examples": {
+              "application/json": {
+                "count": -1,
+                "detail": "",
+                "next": "",
+                "previous": "",
+                "results": [
+                  "severity",
+                  "source",
+                  "cluster"
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          },
+          "500": {
+            "description": "内部服务错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          }
+        }
+      }
+    },
+    "/alerts/labels": {
+      "get": {
+        "description": "获取所有报警标签的名称.",
+        "tags": [
+          "alert"
+        ],
+        "summary": "获取所有报警标签的名称.",
+        "operationId": "getAlertLabelNames",
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CommonResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "examples": {
+              "application/json": {
+                "count": -1,
+                "detail": "",
+                "next": "",
+                "previous": "",
+                "results": [
+                  "severity",
+                  "source",
+                  "cluster"
                 ]
               }
             }
