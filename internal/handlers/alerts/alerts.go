@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"csjk-bk/models"
 	"csjk-bk/pkg/client/postgres"
@@ -141,9 +140,48 @@ func NewGetFiringAlertsHandler(client *http.Client, address string) alertsapi.Ge
 	})
 }
 
-func NewPostAlertHistory(pool *pgxpool.Pool) alertsapi.PostAlertHistoryHandler {
+func NewPostAlertHistory(client *postgres.Client) alertsapi.PostAlertHistoryHandler {
 	return alertsapi.PostAlertHistoryHandlerFunc(func(pahp alertsapi.PostAlertHistoryParams) middleware.Responder {
-		return nil
+		ctx := pahp.HTTPRequest.Context()
+
+		start := time.Time(pahp.Body.Start)
+		end := time.Time(pahp.Body.End)
+		if !start.IsZero() && !end.IsZero() && start.After(end) {
+			return alertsapi.NewPostAlertHistoryBadRequest().WithPayload(&models.StandardResponse{Detail: utils.StringPtr("开始时间不能晚于结束时间")})
+		}
+
+		alerts, err := client.GetAlerts(ctx, start, end, pahp.Body.Status, pahp.Body.Labels, pahp.Body.Annotations, pahp.Body.Page, pahp.Body.PageSize)
+		if err != nil {
+			return alertsapi.NewPostAlertHistoryInternalServerError().WithPayload(&models.StandardResponse{Detail: utils.StringPtr("获取报警历史信息失败")})
+		}
+
+		var alertsModel models.Alerts
+		for _, a := range alerts {
+			alertsModel = append(alertsModel, &models.Alert{
+				ID:         a.ID,
+				Status:     a.Status,
+				Startsat:   strfmt.DateTime(a.StartsAt),
+				Endsat:     strfmt.DateTime(a.EndsAt),
+				Responder:  a.Responder,
+				Operation:  a.Operation,
+				Labels:     a.Label,
+				Annotaions: a.Annotation,
+			})
+		}
+
+		total := int64(len(alerts))
+		var emptyURI strfmt.URI
+		payload := &alertsapi.PostAlertHistoryOKBody{
+			CommonResponse: models.CommonResponse{
+				Count:    &total,
+				Next:     &emptyURI,
+				Previous: &emptyURI,
+				Detail:   utils.StringPtr("获取报警信息成功"),
+			},
+			Alerts: alertsModel,
+		}
+
+		return alertsapi.NewPostAlertHistoryOK().WithPayload(payload)
 	})
 }
 

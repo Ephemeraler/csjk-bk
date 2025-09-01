@@ -23,6 +23,23 @@ type Client struct {
 	pool *pgxpool.Pool
 }
 
+func NewClient(dsn string) (*Client, error) {
+	pool, err := pgxpool.New(context.Background(), dsn)
+	if err != nil {
+		return nil, fmt.Errorf("连接数据库失败: %w", err)
+	}
+
+	return &Client{pool: pool}, nil
+}
+
+func (c *Client) Close() {
+	c.pool.Close()
+}
+
+func (c *Client) Ping(ctx context.Context) error {
+	return c.pool.Ping(ctx)
+}
+
 // GetAlerts 根据报警筛选条件获取报警信息, 条件默认为并集.
 func (c *Client) GetAlerts(ctx context.Context, from, to time.Time, status []string, labels, annotations map[string][]string, page, pageSize int64) (alert.Alerts, error) {
 	alerts := make(alert.Alerts, 0)
