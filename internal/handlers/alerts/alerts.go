@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"csjk-bk/models"
 	"csjk-bk/pkg/common/utils"
@@ -136,6 +137,24 @@ func NewGetFiringAlertsHandler(client *http.Client, address string) alertsapi.Ge
 		}
 
 		return alertsapi.NewGetFiringAlertsOK().WithPayload(payload)
+	})
+}
+
+func NewPostAlertHistory(pool *pgxpool.Pool) alertsapi.PostAlertHistoryHandler {
+	return alertsapi.PostAlertHistoryHandlerFunc(func(pahp alertsapi.PostAlertHistoryParams) middleware.Responder {
+
+	})
+}
+
+func NewGetAlertLabels(pool *pgxpool.Pool) alertsapi.GetAlertLabelsHandlerFunc {
+	return alertsapi.GetAlertLabelsHandlerFunc(func(galp alertsapi.GetAlertLabelsParams) middleware.Responder {
+
+	})
+}
+
+func NewGetAlertLabelNames(pool *pgxpool.Pool) alertsapi.GetAlertLabelNamesHandler {
+	return alertsapi.GetAlertLabelNamesHandlerFunc(func(galnp alertsapi.GetAlertLabelNamesParams) middleware.Responder {
+
 	})
 }
 
