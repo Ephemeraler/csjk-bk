@@ -329,7 +329,7 @@ func init() {
           "alert"
         ],
         "summary": "获取所有报警标签的所有标签值.",
-        "operationId": "getAlertLabels",
+        "operationId": "getAlertLabelValues",
         "parameters": [
           {
             "type": "string",
@@ -957,7 +957,7 @@ func init() {
           "alert"
         ],
         "summary": "获取所有报警标签的所有标签值.",
-        "operationId": "getAlertLabels",
+        "operationId": "getAlertLabelValues",
         "parameters": [
           {
             "type": "string",

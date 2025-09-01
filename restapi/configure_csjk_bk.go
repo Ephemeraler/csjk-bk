@@ -4,13 +4,16 @@ package restapi
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/swag"
 
 	"csjk-bk/internal/handlers/alerts"
+	"csjk-bk/internal/pkg/options"
 	"csjk-bk/pkg/errors"
 	"csjk-bk/restapi/operations"
 )
@@ -19,6 +22,11 @@ import (
 
 func configureFlags(api *operations.CsjkBkAPI) {
 	// api.CommandLineOptionsGroups = []swag.CommandLineOptionsGroup{ ... }
+	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, swag.CommandLineOptionsGroup{
+		ShortDescription: "Database",
+		LongDescription:  "Database connection options",
+		Options:          options.Databases,
+	})
 }
 
 func configureAPI(api *operations.CsjkBkAPI) http.Handler {
@@ -34,7 +42,6 @@ func configureAPI(api *operations.CsjkBkAPI) http.Handler {
 	api.UseSwaggerUI()
 	// To continue using redoc as your UI, uncomment the following line
 	// api.UseRedoc()
-
 	api.JSONConsumer = runtime.JSONConsumer()
 
 	api.JSONProducer = runtime.JSONProducer()
@@ -49,8 +56,12 @@ func configureAPI(api *operations.CsjkBkAPI) http.Handler {
 		},
 	}
 
+	fmt.Println(options.Databases.Postgres.DSN)
+
 	// Handlers
 	api.AlertGetFiringAlertsHandler = alerts.NewGetFiringAlertsHandler(client, "192.168.2.150:19093")
+	api.AlertGetAlertLabelNamesHandler = alerts.NewGetAlertLabelNames(nil)
+	api.AlertGetAlertLabelValuesHandler = alerts.NewGetAlertLabelValues(nil)
 
 	api.PreServerShutdown = func() {}
 

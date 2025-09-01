@@ -48,8 +48,8 @@ func NewCsjkBkAPI(spec *loads.Document) *CsjkBkAPI {
 		AlertGetAlertLabelNamesHandler: alert.GetAlertLabelNamesHandlerFunc(func(params alert.GetAlertLabelNamesParams) middleware.Responder {
 			return middleware.NotImplemented("operation alert.GetAlertLabelNames has not yet been implemented")
 		}),
-		AlertGetAlertLabelsHandler: alert.GetAlertLabelsHandlerFunc(func(params alert.GetAlertLabelsParams) middleware.Responder {
-			return middleware.NotImplemented("operation alert.GetAlertLabels has not yet been implemented")
+		AlertGetAlertLabelValuesHandler: alert.GetAlertLabelValuesHandlerFunc(func(params alert.GetAlertLabelValuesParams) middleware.Responder {
+			return middleware.NotImplemented("operation alert.GetAlertLabelValues has not yet been implemented")
 		}),
 		AlertGetFiringAlertsHandler: alert.GetFiringAlertsHandlerFunc(func(params alert.GetFiringAlertsParams) middleware.Responder {
 			return middleware.NotImplemented("operation alert.GetFiringAlerts has not yet been implemented")
@@ -98,8 +98,8 @@ type CsjkBkAPI struct {
 
 	// AlertGetAlertLabelNamesHandler sets the operation handler for the get alert label names operation
 	AlertGetAlertLabelNamesHandler alert.GetAlertLabelNamesHandler
-	// AlertGetAlertLabelsHandler sets the operation handler for the get alert labels operation
-	AlertGetAlertLabelsHandler alert.GetAlertLabelsHandler
+	// AlertGetAlertLabelValuesHandler sets the operation handler for the get alert label values operation
+	AlertGetAlertLabelValuesHandler alert.GetAlertLabelValuesHandler
 	// AlertGetFiringAlertsHandler sets the operation handler for the get firing alerts operation
 	AlertGetFiringAlertsHandler alert.GetFiringAlertsHandler
 	// SlurmGetSlurmUsersHandler sets the operation handler for the get slurm users operation
@@ -186,8 +186,8 @@ func (o *CsjkBkAPI) Validate() error {
 	if o.AlertGetAlertLabelNamesHandler == nil {
 		unregistered = append(unregistered, "alert.GetAlertLabelNamesHandler")
 	}
-	if o.AlertGetAlertLabelsHandler == nil {
-		unregistered = append(unregistered, "alert.GetAlertLabelsHandler")
+	if o.AlertGetAlertLabelValuesHandler == nil {
+		unregistered = append(unregistered, "alert.GetAlertLabelValuesHandler")
 	}
 	if o.AlertGetFiringAlertsHandler == nil {
 		unregistered = append(unregistered, "alert.GetFiringAlertsHandler")
@@ -293,7 +293,7 @@ func (o *CsjkBkAPI) initHandlerCache() {
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
-	o.handlers["GET"]["/alerts/label/{labelname}/values"] = alert.NewGetAlertLabels(o.context, o.AlertGetAlertLabelsHandler)
+	o.handlers["GET"]["/alerts/label/{labelname}/values"] = alert.NewGetAlertLabelValues(o.context, o.AlertGetAlertLabelValuesHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}

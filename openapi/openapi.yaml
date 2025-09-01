@@ -263,7 +263,7 @@ paths:
   /alerts/label/{labelname}/values:
     get:
       tags: ["alert"]
-      operationId: getAlertLabels
+      operationId: getAlertLabelValues
       summary: 获取所有报警标签的所有标签值.
       description: 获取所有报警标签的所有标签值.
       parameters:

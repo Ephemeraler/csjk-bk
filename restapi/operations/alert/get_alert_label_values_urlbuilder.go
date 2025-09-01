@@ -12,8 +12,8 @@ import (
 	"strings"
 )
 
-// GetAlertLabelsURL generates an URL for the get alert labels operation
-type GetAlertLabelsURL struct {
+// GetAlertLabelValuesURL generates an URL for the get alert label values operation
+type GetAlertLabelValuesURL struct {
 	Labelname string
 
 	_basePath string
@@ -24,7 +24,7 @@ type GetAlertLabelsURL struct {
 // WithBasePath sets the base path for this url builder, only required when it's different from the
 // base path specified in the swagger spec.
 // When the value of the base path is an empty string
-func (o *GetAlertLabelsURL) WithBasePath(bp string) *GetAlertLabelsURL {
+func (o *GetAlertLabelValuesURL) WithBasePath(bp string) *GetAlertLabelValuesURL {
 	o.SetBasePath(bp)
 	return o
 }
@@ -32,12 +32,12 @@ func (o *GetAlertLabelsURL) WithBasePath(bp string) *GetAlertLabelsURL {
 // SetBasePath sets the base path for this url builder, only required when it's different from the
 // base path specified in the swagger spec.
 // When the value of the base path is an empty string
-func (o *GetAlertLabelsURL) SetBasePath(bp string) {
+func (o *GetAlertLabelValuesURL) SetBasePath(bp string) {
 	o._basePath = bp
 }
 
 // Build a url path and query string
-func (o *GetAlertLabelsURL) Build() (*url.URL, error) {
+func (o *GetAlertLabelValuesURL) Build() (*url.URL, error) {
 	var _result url.URL
 
 	var _path = "/alerts/label/{labelname}/values"
@@ -46,7 +46,7 @@ func (o *GetAlertLabelsURL) Build() (*url.URL, error) {
 	if labelname != "" {
 		_path = strings.Replace(_path, "{labelname}", labelname, -1)
 	} else {
-		return nil, errors.New("labelname is required on GetAlertLabelsURL")
+		return nil, errors.New("labelname is required on GetAlertLabelValuesURL")
 	}
 
 	_basePath := o._basePath
@@ -59,7 +59,7 @@ func (o *GetAlertLabelsURL) Build() (*url.URL, error) {
 }
 
 // Must is a helper function to panic when the url builder returns an error
-func (o *GetAlertLabelsURL) Must(u *url.URL, err error) *url.URL {
+func (o *GetAlertLabelValuesURL) Must(u *url.URL, err error) *url.URL {
 	if err != nil {
 		panic(err)
 	}
@@ -70,17 +70,17 @@ func (o *GetAlertLabelsURL) Must(u *url.URL, err error) *url.URL {
 }
 
 // String returns the string representation of the path with query string
-func (o *GetAlertLabelsURL) String() string {
+func (o *GetAlertLabelValuesURL) String() string {
 	return o.Must(o.Build()).String()
 }
 
 // BuildFull builds a full url with scheme, host, path and query string
-func (o *GetAlertLabelsURL) BuildFull(scheme, host string) (*url.URL, error) {
+func (o *GetAlertLabelValuesURL) BuildFull(scheme, host string) (*url.URL, error) {
 	if scheme == "" {
-		return nil, errors.New("scheme is required for a full url on GetAlertLabelsURL")
+		return nil, errors.New("scheme is required for a full url on GetAlertLabelValuesURL")
 	}
 	if host == "" {
-		return nil, errors.New("host is required for a full url on GetAlertLabelsURL")
+		return nil, errors.New("host is required for a full url on GetAlertLabelValuesURL")
 	}
 
 	base, err := o.Build()
@@ -94,6 +94,6 @@ func (o *GetAlertLabelsURL) BuildFull(scheme, host string) (*url.URL, error) {
 }
 
 // StringFull returns the string representation of a complete url
-func (o *GetAlertLabelsURL) StringFull(scheme, host string) string {
+func (o *GetAlertLabelValuesURL) StringFull(scheme, host string) string {
 	return o.Must(o.BuildFull(scheme, host)).String()
 }

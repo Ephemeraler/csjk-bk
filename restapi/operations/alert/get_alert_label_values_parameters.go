@@ -13,19 +13,19 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetAlertLabelsParams creates a new GetAlertLabelsParams object
+// NewGetAlertLabelValuesParams creates a new GetAlertLabelValuesParams object
 //
 // There are no default values defined in the spec.
-func NewGetAlertLabelsParams() GetAlertLabelsParams {
+func NewGetAlertLabelValuesParams() GetAlertLabelValuesParams {
 
-	return GetAlertLabelsParams{}
+	return GetAlertLabelValuesParams{}
 }
 
-// GetAlertLabelsParams contains all the bound params for the get alert labels operation
+// GetAlertLabelValuesParams contains all the bound params for the get alert label values operation
 // typically these are obtained from a http.Request
 //
-// swagger:parameters getAlertLabels
-type GetAlertLabelsParams struct {
+// swagger:parameters getAlertLabelValues
+type GetAlertLabelValuesParams struct {
 
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
@@ -40,8 +40,8 @@ type GetAlertLabelsParams struct {
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
 // for simple values it will use straight method calls.
 //
-// To ensure default values, the struct must have been initialized with NewGetAlertLabelsParams() beforehand.
-func (o *GetAlertLabelsParams) BindRequest(r *http.Request, route *middleware.MatchedRoute) error {
+// To ensure default values, the struct must have been initialized with NewGetAlertLabelValuesParams() beforehand.
+func (o *GetAlertLabelValuesParams) BindRequest(r *http.Request, route *middleware.MatchedRoute) error {
 	var res []error
 
 	o.HTTPRequest = r
@@ -57,7 +57,7 @@ func (o *GetAlertLabelsParams) BindRequest(r *http.Request, route *middleware.Ma
 }
 
 // bindLabelname binds and validates parameter Labelname from path.
-func (o *GetAlertLabelsParams) bindLabelname(rawData []string, hasKey bool, formats strfmt.Registry) error {
+func (o *GetAlertLabelValuesParams) bindLabelname(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	var raw string
 	if len(rawData) > 0 {
 		raw = rawData[len(rawData)-1]

@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"csjk-bk/models"
+	"csjk-bk/pkg/client/postgres"
 	"csjk-bk/pkg/common/utils"
 	alertsapi "csjk-bk/restapi/operations/alert"
 )
@@ -142,19 +143,57 @@ func NewGetFiringAlertsHandler(client *http.Client, address string) alertsapi.Ge
 
 func NewPostAlertHistory(pool *pgxpool.Pool) alertsapi.PostAlertHistoryHandler {
 	return alertsapi.PostAlertHistoryHandlerFunc(func(pahp alertsapi.PostAlertHistoryParams) middleware.Responder {
-
+		return nil
 	})
 }
 
-func NewGetAlertLabels(pool *pgxpool.Pool) alertsapi.GetAlertLabelsHandlerFunc {
-	return alertsapi.GetAlertLabelsHandlerFunc(func(galp alertsapi.GetAlertLabelsParams) middleware.Responder {
-
-	})
-}
-
-func NewGetAlertLabelNames(pool *pgxpool.Pool) alertsapi.GetAlertLabelNamesHandler {
+func NewGetAlertLabelNames(client *postgres.Client) alertsapi.GetAlertLabelNamesHandler {
 	return alertsapi.GetAlertLabelNamesHandlerFunc(func(galnp alertsapi.GetAlertLabelNamesParams) middleware.Responder {
+		ctx := galnp.HTTPRequest.Context()
 
+		labels, err := client.GetAlertLabels(ctx)
+		if err != nil {
+			return alertsapi.NewGetAlertLabelNamesInternalServerError().WithPayload(&models.StandardResponse{Detail: utils.StringPtr("获取报警标签名称失败")})
+		}
+
+		total := int64(len(labels))
+		var emptyURI strfmt.URI
+		payload := &alertsapi.GetAlertLabelNamesOKBody{
+			CommonResponse: models.CommonResponse{
+				Count:    &total,
+				Next:     &emptyURI,
+				Previous: &emptyURI,
+				Detail:   utils.StringPtr("获取报警标签名称成功"),
+			},
+			Results: labels,
+		}
+
+		return alertsapi.NewGetAlertLabelNamesOK().WithPayload(payload)
+	})
+}
+
+func NewGetAlertLabelValues(client *postgres.Client) alertsapi.GetAlertLabelValuesHandlerFunc {
+	return alertsapi.GetAlertLabelValuesHandlerFunc(func(galp alertsapi.GetAlertLabelValuesParams) middleware.Responder {
+		ctx := galp.HTTPRequest.Context()
+
+		values, err := client.GetAlertLabelValues(ctx, galp.Labelname)
+		if err != nil {
+			return alertsapi.NewGetAlertLabelValuesInternalServerError().WithPayload(&models.StandardResponse{Detail: utils.StringPtr("获取报警标签值失败")})
+		}
+
+		total := int64(len(values))
+		var emptyURI strfmt.URI
+		payload := &alertsapi.GetAlertLabelValuesOKBody{
+			CommonResponse: models.CommonResponse{
+				Count:    &total,
+				Next:     &emptyURI,
+				Previous: &emptyURI,
+				Detail:   utils.StringPtr("获取报警标签值成功"),
+			},
+			Results: values,
+		}
+
+		return alertsapi.NewGetAlertLabelValuesOK().WithPayload(payload)
 	})
 }
 
