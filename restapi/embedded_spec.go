@@ -447,6 +447,74 @@ func init() {
         }
       }
     },
+    "/alerts/operation": {
+      "put": {
+        "description": "更新报警处理人和处理方式.",
+        "tags": [
+          "alert"
+        ],
+        "summary": "更新报警处理人和处理方式.",
+        "operationId": "putAlertOperation",
+        "parameters": [
+          {
+            "description": "请求参数",
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "required": [
+                "ids",
+                "responder",
+                "operation"
+              ],
+              "properties": {
+                "ids": {
+                  "description": "报警ID列表",
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "operation": {
+                  "description": "处理方式",
+                  "type": "string"
+                },
+                "responder": {
+                  "description": "处理人",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            },
+            "examples": {
+              "application/json": {
+                "count": -1,
+                "detail": "",
+                "next": "",
+                "previous": ""
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          },
+          "500": {
+            "description": "内部服务错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          }
+        }
+      }
+    },
     "/slurm/users": {
       "get": {
         "description": "获取 slurm 所有用户信息, 以列表形式返回. 该 API 用户\"资源管理-资源监控, 过滤面板中用户控件\". 该 API 由科大提供.",
@@ -1057,6 +1125,74 @@ func init() {
                   "source",
                   "cluster"
                 ]
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          },
+          "500": {
+            "description": "内部服务错误",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            }
+          }
+        }
+      }
+    },
+    "/alerts/operation": {
+      "put": {
+        "description": "更新报警处理人和处理方式.",
+        "tags": [
+          "alert"
+        ],
+        "summary": "更新报警处理人和处理方式.",
+        "operationId": "putAlertOperation",
+        "parameters": [
+          {
+            "description": "请求参数",
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "required": [
+                "ids",
+                "responder",
+                "operation"
+              ],
+              "properties": {
+                "ids": {
+                  "description": "报警ID列表",
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "operation": {
+                  "description": "处理方式",
+                  "type": "string"
+                },
+                "responder": {
+                  "description": "处理人",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "schema": {
+              "$ref": "#/definitions/StandardResponse"
+            },
+            "examples": {
+              "application/json": {
+                "count": -1,
+                "detail": "",
+                "next": "",
+                "previous": ""
               }
             }
           },

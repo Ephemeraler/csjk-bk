@@ -60,6 +60,9 @@ func NewCsjkBkAPI(spec *loads.Document) *CsjkBkAPI {
 		AlertPostAlertHistoryHandler: alert.PostAlertHistoryHandlerFunc(func(params alert.PostAlertHistoryParams) middleware.Responder {
 			return middleware.NotImplemented("operation alert.PostAlertHistory has not yet been implemented")
 		}),
+		AlertPutAlertOperationHandler: alert.PutAlertOperationHandlerFunc(func(params alert.PutAlertOperationParams) middleware.Responder {
+			return middleware.NotImplemented("operation alert.PutAlertOperation has not yet been implemented")
+		}),
 	}
 }
 
@@ -106,6 +109,8 @@ type CsjkBkAPI struct {
 	SlurmGetSlurmUsersHandler slurm.GetSlurmUsersHandler
 	// AlertPostAlertHistoryHandler sets the operation handler for the post alert history operation
 	AlertPostAlertHistoryHandler alert.PostAlertHistoryHandler
+	// AlertPutAlertOperationHandler sets the operation handler for the put alert operation operation
+	AlertPutAlertOperationHandler alert.PutAlertOperationHandler
 
 	// ServeError is called when an error is received, there is a default handler
 	// but you can set your own with this
@@ -197,6 +202,9 @@ func (o *CsjkBkAPI) Validate() error {
 	}
 	if o.AlertPostAlertHistoryHandler == nil {
 		unregistered = append(unregistered, "alert.PostAlertHistoryHandler")
+	}
+	if o.AlertPutAlertOperationHandler == nil {
+		unregistered = append(unregistered, "alert.PutAlertOperationHandler")
 	}
 
 	if len(unregistered) > 0 {
@@ -306,6 +314,10 @@ func (o *CsjkBkAPI) initHandlerCache() {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/alerts/history"] = alert.NewPostAlertHistory(o.context, o.AlertPostAlertHistoryHandler)
+	if o.handlers["PUT"] == nil {
+		o.handlers["PUT"] = make(map[string]http.Handler)
+	}
+	o.handlers["PUT"]["/alerts/operation"] = alert.NewPutAlertOperation(o.context, o.AlertPutAlertOperationHandler)
 }
 
 // Serve creates a http handler to serve the API over HTTP

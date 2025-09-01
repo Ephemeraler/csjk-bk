@@ -303,6 +303,53 @@ paths:
           schema:
             $ref: "#/definitions/StandardResponse"
 
+  /alerts/operation:
+    put:
+      tags: ["alert"]
+      operationId: putAlertOperation
+      summary: 更新报警处理人和处理方式.
+      description: 更新报警处理人和处理方式.
+      parameters:
+        - in: body
+          name: body
+          description: 请求参数
+          schema:
+            type: object
+            required:
+              - ids
+              - responder
+              - operation
+            properties:
+              ids:
+                type: integer
+                format: int64
+                description: 报警ID列表
+              responder:
+                type: string
+                description: 处理人
+              operation:
+                type: string
+                description: 处理方式
+      responses:
+        "200":
+          description: 成功响应
+          schema:
+            $ref: "#/definitions/StandardResponse"
+          examples:
+            application/json:
+              count: -1
+              next: ""
+              previous: ""
+              detail: ""
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: "#/definitions/StandardResponse"
+        "500":
+          description: 内部服务错误
+          schema:
+            $ref: "#/definitions/StandardResponse"
+
   /slurm/users:
     get:
       tags: ["slurm", "kd"]
