@@ -235,6 +235,29 @@ func NewGetAlertLabelValues(client *postgres.Client) alertsapi.GetAlertLabelValu
 	})
 }
 
+// NewPutAlertOperation 更新报警处理人和处理方式.
+func NewPutAlertOperation(client *postgres.Client) alertsapi.PutAlertOperationHandler {
+	return alertsapi.PutAlertOperationHandlerFunc(func(pao alertsapi.PutAlertOperationParams) middleware.Responder {
+		ctx := pao.HTTPRequest.Context()
+
+		if err := client.SetOperation(ctx, *pao.Body.Ids, *pao.Body.Operation, *pao.Body.Responder); err != nil {
+			return alertsapi.NewPutAlertOperationInternalServerError().WithPayload(&models.StandardResponse{Detail: utils.StringPtr("更新报警处理信息失败")})
+		}
+
+		var emptyURI strfmt.URI
+		count := int64(-1)
+		payload := &models.StandardResponse{
+			Count:    &count,
+			Next:     &emptyURI,
+			Previous: &emptyURI,
+			Results:  struct{}{},
+			Detail:   utils.StringPtr("更新报警处理信息成功"),
+		}
+
+		return alertsapi.NewPutAlertOperationOK().WithPayload(payload)
+	})
+}
+
 type Alerts []Alert
 
 type Alert struct {
