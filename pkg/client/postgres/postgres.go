@@ -220,3 +220,16 @@ func (c *Client) GetAlertLabelValues(ctx context.Context, label string) ([]strin
 	}
 	return values, nil
 }
+
+// SetOperation 更新指定报警的处理方式和处理人.
+func (c *Client) SetOperation(ctx context.Context, id int64, operation, responder string) error {
+	cmd := "UPDATE alert SET operation = $1, responder = $2 WHERE id = $3"
+	tag, err := c.pool.Exec(ctx, cmd, operation, responder, id)
+	if err != nil {
+		return fmt.Errorf("更新数据库失败: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("未找到报警 ID %d", id)
+	}
+	return nil
+}
