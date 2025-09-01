@@ -88,7 +88,7 @@ func ServeError(rw http.ResponseWriter, r *http.Request, err error) {
 		rw.Header().Add("Allow", strings.Join(e.Allowed, ","))
 		rw.WriteHeader(asHTTPCode(int(e.Code())))
 		if r == nil || r.Method != http.MethodHead {
-			_, _ = rw.Write(errorAsJSON(New(e.Error())))
+			_, _ = rw.Write(errorAsJSON(New("%s", e.Error())))
 		}
 	case errors.Error:
 		fmt.Println(e.Code(), e.Error())
@@ -100,7 +100,7 @@ func ServeError(rw http.ResponseWriter, r *http.Request, err error) {
 		}
 		rw.WriteHeader(asHTTPCode(int(e.Code())))
 		if r == nil || r.Method != http.MethodHead {
-			_, _ = rw.Write(errorAsJSON(New(e.Error())))
+			_, _ = rw.Write(errorAsJSON(New("%s", e.Error())))
 		}
 	case nil:
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -108,7 +108,7 @@ func ServeError(rw http.ResponseWriter, r *http.Request, err error) {
 	default:
 		rw.WriteHeader(http.StatusInternalServerError)
 		if r == nil || r.Method != http.MethodHead {
-			_, _ = rw.Write(errorAsJSON(New(err.Error())))
+			_, _ = rw.Write(errorAsJSON(New("%s", err.Error())))
 		}
 	}
 }
