@@ -308,7 +308,7 @@ paths:
       tags: ["alert"]
       operationId: putAlertOperation
       summary: 更新报警处理人和处理方式.
-      description: 更新报警处理人和处理方式.
+      description: 更新报警处理人和处理方式. 涉及前端模块: 报警管理.历史事件和报警.故障详情
       parameters:
         - in: body
           name: body
