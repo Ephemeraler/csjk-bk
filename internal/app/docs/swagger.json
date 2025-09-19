@@ -1,0 +1,2529 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "csjk backend",
+        "title": "csjk-bk",
+        "contact": {
+            "email": "hecheng@nscc-tj.cn"
+        },
+        "version": "0.0.1-alpha"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/api/v1/alerts/firing": {
+            "get": {
+                "description": "从报警平台(alertmanager)中获取实时报警信息, 请求参数 class 对应分屏设计. 不分屏时, class=all. 分屏时 class=\"\u003c对应系统\u003e\"",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报警",
+                    "实时报警"
+                ],
+                "summary": "获取实时报警信息.",
+                "parameters": [
+                    {
+                        "enum": [
+                            "inband",
+                            "outband",
+                            "event",
+                            "all"
+                        ],
+                        "type": "string",
+                        "default": "all",
+                        "description": "报警类别, 支持 inband, outband, event, all",
+                        "name": "class",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            true
+                        ],
+                        "type": "boolean",
+                        "default": true,
+                        "description": "启动分页, 当前仅支持强制分页",
+                        "name": "paging",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页报警数量, 最大仅支持100",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "$ref": "#/definitions/alert.AlertsFiringResults"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/alerts/history": {
+            "get": {
+                "description": "从数据库中获取历史报警信息.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报警",
+                    "历史报警"
+                ],
+                "summary": "获取历史报警信息.",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "default": "firing,resolved",
+                        "description": "报警状态",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "报警发生时间范围的开始时间, 需符合 RFC3339 时间格式, 默认为当前时间 - 1小时",
+                        "name": "start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "报警发生时间范围的结束时间, 需符合 RFC3339 时间格式, 默认为当前时间",
+                        "name": "end",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "报警标签",
+                        "name": "labels",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "报警注释",
+                        "name": "annotations",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            true
+                        ],
+                        "type": "boolean",
+                        "default": true,
+                        "description": "启动分页, 当前仅支持开启模式",
+                        "name": "paging",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页报警数量, 最大仅支持100",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/postgres.Alert"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/ldap/group": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "向某集群中 ldap 用户组添加新用户组",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "删除某集群中 ldap 用户组",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/ldap/groups": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "获取某集群中 ldap 用户组列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/slurm.LdapGroup"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/ldap/user": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "在某集群 ldap 中更新用户信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "在某集群 ldap 中创建用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "在某集群 ldap 中删除某用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/ldap/users": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "获取某集群中 LDAP 所有用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/slurm.LdapUser"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/account/name/list": {
+            "get": {
+                "description": "返回账户名称字符串数组，无分页",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "获取某集群账户名称列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/account/{account}/childnodes": {
+            "get": {
+                "description": "返回账户节点的子账号名称列表及子用户节点信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "获取某集群中指定账户的子节点信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "账户节点名称",
+                        "name": "account",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"root\"",
+                        "description": "账户节点名称",
+                        "name": "account",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "$ref": "#/definitions/slurmrest.AccountNode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/accounting/accounts/name": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "获取某集群中 slurm 账户名列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/accounting/job/list": {
+            "get": {
+                "description": "返回账户历史作业列表，可选分页参数",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "作业管理"
+                ],
+                "summary": "获取某集群账户中作业列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "是否开启分页, 当前仅支持true",
+                        "name": "paging",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页号(从1开始)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/slurm.JobListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/accounting/job/{jobid}/detail": {
+            "get": {
+                "description": "返回作业基础元信息与所有作业步列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "作业管理"
+                ],
+                "summary": "获取某集群账户中某作业详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "作业号",
+                        "name": "jobid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "$ref": "#/definitions/slurm.DetailOfJobFromAccounting"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/association/detail": {
+            "get": {
+                "description": "根据 account、可选 user、可选 partition 查询关联详情",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "获取某集群中某个关联详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"root\"",
+                        "description": "账户名",
+                        "name": "account",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "\"\"",
+                        "example": "\"alice\"",
+                        "description": "用户名",
+                        "name": "user",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "\"\"",
+                        "example": "\"p1\"",
+                        "description": "分区名",
+                        "name": "partition",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "$ref": "#/definitions/slurm.AssociationDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/association/{account}/childnodes": {
+            "get": {
+                "description": "返回账户关联树中该账户的子账户与子用户节点信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "获取某集群中指定账户的关联子节点信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"root\"",
+                        "description": "账户名称",
+                        "name": "account",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "$ref": "#/definitions/slurmrest.AssociationNode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/overview": {
+            "get": {
+                "description": "获取资源总览页面资源统计信息, 包括集群节点总数, 逻辑CPU总数, 总核数, 内存总量, 运行作业数, 总作业数.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "资源总览"
+                ],
+                "summary": "获取资源总览页面资源统计信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "$ref": "#/definitions/slurm.Overview"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/partition/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "分区管理"
+                ],
+                "summary": "获取某集群所有分区概述",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "是否开启分页",
+                        "name": "paging",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页号(从1开始)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/slurm.PartitionListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/partition/{name}/detail": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "分区管理"
+                ],
+                "summary": "获取某集群中某个分区的详细内容",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"p1\"",
+                        "description": "分区名称",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "$ref": "#/definitions/slurm.PartitionDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/qos/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "QoS"
+                ],
+                "summary": "获取某集群中 QoS 列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "是否开启分页",
+                        "name": "paging",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码，从 1 开始（仅当 paging=true 生效）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，1-100（仅当 paging=true 生效）",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/slurm.QoSListElem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/qos/name/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "获取某集群中所有 QoS 名称列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/qos/{id}/detail": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "QoS"
+                ],
+                "summary": "获取某集群中某个 QoS 详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "QoS ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "$ref": "#/definitions/slurm.QoSDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/scheduling/job/list": {
+            "get": {
+                "description": "返回当前调度队列中的作业列表，可选分页参数",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "作业管理"
+                ],
+                "summary": "获取某集群调度列表中作业列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "是否开启分页, 当前仅支持true",
+                        "name": "paging",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页号(从1开始)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/slurm.JobListItemOfScheduling"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/scheduling/job/{jobid}/detail": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "作业管理"
+                ],
+                "summary": "获取某集群调度列表中某作业详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "作业号",
+                        "name": "jobid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.JobsStepInScheduling"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "alert.Alert": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "报警注释",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "endsat": {
+                    "description": "报警结束时间",
+                    "type": "string"
+                },
+                "fingerprint": {
+                    "description": "报警指纹",
+                    "type": "string"
+                },
+                "generatorurl": {
+                    "description": "报警产生来源",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID, 活跃报警中无该字段, 历史报警中才会存在, 对应数据库中 alert 表 ID.",
+                    "type": "integer"
+                },
+                "labels": {
+                    "description": "报警标签",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "operation": {
+                    "description": "报警处理办法",
+                    "type": "string"
+                },
+                "responder": {
+                    "description": "报警处理人",
+                    "type": "string"
+                },
+                "startsat": {
+                    "description": "报警开始时间",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "报警状态",
+                    "type": "string"
+                }
+            }
+        },
+        "alert.AlertsFiringResults": {
+            "type": "object",
+            "properties": {
+                "alerts": {
+                    "description": "报警信息",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/alert.Alert"
+                    }
+                },
+                "severity_count": {
+                    "description": "统计信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/alert.FiringStatistic"
+                        }
+                    ]
+                }
+            }
+        },
+        "alert.FiringStatistic": {
+            "type": "object",
+            "properties": {
+                "event": {
+                    "description": "时间报警统计信息",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "inband": {
+                    "description": "带内报警统计信息",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "outband": {
+                    "description": "带外报警统计信息",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "model.JobsStepInScheduling": {
+            "type": "object",
+            "properties": {
+                "Name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                }
+            }
+        },
+        "postgres.Alert": {
+            "type": "object",
+            "properties": {
+                "annotation": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "endsAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "label": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "operation": {
+                    "type": "string"
+                },
+                "responder": {
+                    "type": "string"
+                },
+                "startsAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.Response": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "detail": {
+                    "type": "string"
+                },
+                "next": {
+                    "type": "string"
+                },
+                "previous": {
+                    "type": "string"
+                },
+                "results": {}
+            }
+        },
+        "slurm.AssociationDetail": {
+            "type": "object",
+            "properties": {
+                "acct": {
+                    "description": "账号名称",
+                    "type": "string"
+                },
+                "cluster_name": {
+                    "description": "系统名称",
+                    "type": "string"
+                },
+                "def_qos_id": {
+                    "description": "默认 QoS 策略",
+                    "type": "string"
+                },
+                "grp_jobs": {
+                    "description": "组级运行作业总数上限",
+                    "type": "integer"
+                },
+                "grp_jobs_accrue": {
+                    "description": "组级累计优先级作业上限",
+                    "type": "integer"
+                },
+                "grp_submit_jobs": {
+                    "description": "组级提交作业总数上限",
+                    "type": "integer"
+                },
+                "grp_tres": {
+                    "description": "组级总 TRES 资源限制",
+                    "type": "string"
+                },
+                "grp_tres_mins": {
+                    "description": "组级 TRES 时间限制",
+                    "type": "string"
+                },
+                "grp_tres_run_mins": {
+                    "description": "组级运行中 TRES 时间上限",
+                    "type": "string"
+                },
+                "grp_wall": {
+                    "description": "组级总运行时间限制",
+                    "type": "integer"
+                },
+                "id_assoc": {
+                    "description": "关联 ID",
+                    "type": "integer"
+                },
+                "max_jobs": {
+                    "description": "单账户运行作业上限",
+                    "type": "integer"
+                },
+                "max_jobs_accrue": {
+                    "description": "累计优先级作业上限",
+                    "type": "integer"
+                },
+                "max_submit_jobs": {
+                    "description": "单账户提交作业上限",
+                    "type": "integer"
+                },
+                "max_tres_mins_pj": {
+                    "description": "单作业 TRES 时间上限",
+                    "type": "string"
+                },
+                "max_tres_pj": {
+                    "description": "单作业 TRES 上限",
+                    "type": "string"
+                },
+                "max_tres_pn": {
+                    "description": "单节点 TRES 上限",
+                    "type": "string"
+                },
+                "max_tres_run_mins": {
+                    "description": "单作业运行中 TRES 时间上限",
+                    "type": "string"
+                },
+                "max_wall_pj": {
+                    "description": "单作业最大运行时间",
+                    "type": "integer"
+                },
+                "min_prio_thresh": {
+                    "description": "优先级阈值",
+                    "type": "integer"
+                },
+                "partition": {
+                    "description": "分区名称",
+                    "type": "string"
+                },
+                "priority": {
+                    "description": "账户调度优先级",
+                    "type": "integer"
+                },
+                "qos": {
+                    "description": "可用/关联的 QoS 列表",
+                    "type": "string"
+                },
+                "shares": {
+                    "description": "公平份额权重",
+                    "type": "integer"
+                }
+            }
+        },
+        "slurm.DetailOfJobFromAccounting": {
+            "type": "object",
+            "properties": {
+                "jobid": {
+                    "description": "作业ID",
+                    "type": "integer"
+                },
+                "meta": {
+                    "$ref": "#/definitions/slurm.MetadataOfJobFromAccounting"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/slurm.StepOfJobFromAccounting"
+                    }
+                }
+            }
+        },
+        "slurm.JobListItem": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "description": "账号",
+                    "type": "string"
+                },
+                "jobid": {
+                    "description": "作业ID",
+                    "type": "integer"
+                },
+                "nodelist": {
+                    "description": "节点列表",
+                    "type": "string"
+                },
+                "partition": {
+                    "description": "分区",
+                    "type": "string"
+                },
+                "qos": {
+                    "description": "QoS",
+                    "type": "string"
+                },
+                "reason": {
+                    "description": "原因",
+                    "type": "string"
+                },
+                "state": {
+                    "description": "状态",
+                    "type": "string"
+                },
+                "tres_alloc": {
+                    "description": "资源个数",
+                    "type": "string"
+                }
+            }
+        },
+        "slurm.JobListItemOfScheduling": {
+            "type": "object",
+            "properties": {
+                "cpus": {
+                    "description": "资源个数",
+                    "type": "string"
+                },
+                "jobid": {
+                    "description": "作业 ID",
+                    "type": "string"
+                },
+                "nodelist": {
+                    "description": "节点列表",
+                    "type": "string"
+                },
+                "partition": {
+                    "description": "分区",
+                    "type": "string"
+                },
+                "qos": {
+                    "description": "QoS",
+                    "type": "string"
+                },
+                "reason": {
+                    "description": "原因",
+                    "type": "string"
+                },
+                "state": {
+                    "description": "状态",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "账户 user(account)",
+                    "type": "string"
+                }
+            }
+        },
+        "slurm.LdapGroup": {
+            "type": "object",
+            "properties": {
+                "gid": {
+                    "description": "用户组 id(linux gid), 对应 ldap gidNumber",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "用户组名称, 对应 ldap gid",
+                    "type": "string"
+                },
+                "users": {
+                    "description": "用户",
+                    "type": "string"
+                }
+            }
+        },
+        "slurm.LdapUser": {
+            "type": "object",
+            "properties": {
+                "Department": {
+                    "description": "部门",
+                    "type": "string"
+                },
+                "UID": {
+                    "description": "ldap uidNumber",
+                    "type": "string"
+                },
+                "additional_group": {
+                    "description": "附加组",
+                    "type": "string"
+                },
+                "common_name": {
+                    "description": "全名",
+                    "type": "string"
+                },
+                "home_dir": {
+                    "description": "HOME 目录",
+                    "type": "string"
+                },
+                "mobile": {
+                    "description": "电话",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "用户名",
+                    "type": "string"
+                },
+                "primary_group": {
+                    "description": "主组",
+                    "type": "string"
+                }
+            }
+        },
+        "slurm.MetadataOfJobFromAccounting": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "description": "账号",
+                    "type": "string"
+                },
+                "group": {
+                    "description": "分组",
+                    "type": "string"
+                },
+                "job_cmd": {
+                    "description": "作业命令",
+                    "type": "string"
+                },
+                "job_name": {
+                    "description": "作业名",
+                    "type": "string"
+                },
+                "nodes_alloc": {
+                    "description": "节点数",
+                    "type": "integer"
+                },
+                "partition": {
+                    "description": "分区",
+                    "type": "string"
+                },
+                "priority": {
+                    "description": "优先级",
+                    "type": "integer"
+                },
+                "qos": {
+                    "description": "QoS 名称",
+                    "type": "string"
+                },
+                "result": {
+                    "description": "运行结果 state 和 exitcode 组合",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "用户名",
+                    "type": "string"
+                },
+                "work_dir": {
+                    "description": "工作目录",
+                    "type": "string"
+                }
+            }
+        },
+        "slurm.Overview": {
+            "type": "object",
+            "properties": {
+                "cores": {
+                    "description": "核心总数",
+                    "type": "integer"
+                },
+                "cpus": {
+                    "description": "cpus 总数",
+                    "type": "integer"
+                },
+                "mems": {
+                    "description": "内存总量(MB)",
+                    "type": "integer"
+                },
+                "nodes": {
+                    "description": "节点总数",
+                    "type": "integer"
+                },
+                "running_jobs": {
+                    "description": "运行作业总数",
+                    "type": "integer"
+                },
+                "total_jobs": {
+                    "description": "作业总数",
+                    "type": "integer"
+                }
+            }
+        },
+        "slurm.PartitionDetail": {
+            "type": "object",
+            "properties": {
+                "alertnate": {
+                    "description": "备注(选)分区, 对应 Alternate",
+                    "type": "string"
+                },
+                "allow_accounts": {
+                    "description": "允许的账户, 对应 AllowAccounts",
+                    "type": "string"
+                },
+                "allow_alloc_nodes": {
+                    "description": "允许分配的节点数, 对应 AllowAllocNodes(更优先) 或 Nodes",
+                    "type": "string"
+                },
+                "allow_groups": {
+                    "description": "允许的用户组, 对应 AllowGroups",
+                    "type": "string"
+                },
+                "cpu_bind_param": {
+                    "description": "CPU 绑定参数",
+                    "type": "string"
+                },
+                "cpu_num": {
+                    "description": "CPU数, 从节点信息中统计",
+                    "type": "string"
+                },
+                "def_mem_per_cpu": {
+                    "description": "默认每 cpu 分配的内存数, 对应 DefMemPerCPU",
+                    "type": "string"
+                },
+                "def_mem_per_node": {
+                    "description": "默认每节点分配的内存数, 对应 DefMemPerNode",
+                    "type": "string"
+                },
+                "deny_accounts": {
+                    "description": "禁止的账户, 对应 DenyAccounts",
+                    "type": "string"
+                },
+                "exclusive_user": {
+                    "description": "是否用户独占, 对应 ExclusiveUser",
+                    "type": "string"
+                },
+                "is_def": {
+                    "description": "是否为默认分区, 对应 Default",
+                    "type": "string"
+                },
+                "is_hidden": {
+                    "description": "是否为隐藏分区, 对应 Hidden",
+                    "type": "string"
+                },
+                "is_resv": {
+                    "description": "是否需要预约, 对应 ReqResv",
+                    "type": "string"
+                },
+                "max_cpus_per_nodes": {
+                    "description": "每节点最多 CPU 数, 对应 MaxCPUsPerNode",
+                    "type": "string"
+                },
+                "max_mem_per_cpu": {
+                    "description": "最大每 cpu 分配的内存数, 对应 MaxMemPerCPU",
+                    "type": "string"
+                },
+                "max_mem_per_node": {
+                    "description": "最大每节点分配内存数, 对应 MaxMemPerNode",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "分区名称, 对应 PartitionName",
+                    "type": "string"
+                },
+                "node_num": {
+                    "description": "节点数, 从节点信息统计",
+                    "type": "string"
+                },
+                "nodelist": {
+                    "description": "节点列表, 对应 Nodes",
+                    "type": "string"
+                },
+                "over_subscribe": {
+                    "description": "缺失, 是否禁止 root 作业",
+                    "type": "string"
+                },
+                "root_only": {
+                    "description": "是否仅允许 root 提交作业, 对应 RootOnly",
+                    "type": "string"
+                },
+                "state": {
+                    "description": "状态, 对应 State",
+                    "type": "string"
+                },
+                "suspend_time": {
+                    "description": "节点挂起前空闲时间, 对应 SuspendTime",
+                    "type": "string"
+                },
+                "suspend_timeout": {
+                    "description": "节点挂起超时, 对应 SuspendTimeout",
+                    "type": "string"
+                }
+            }
+        },
+        "slurm.PartitionListItem": {
+            "type": "object",
+            "properties": {
+                "is_def": {
+                    "description": "是否为默认分区",
+                    "type": "string"
+                },
+                "max_time": {
+                    "description": "最长作业时间限制",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "分区名称",
+                    "type": "string"
+                },
+                "node_num": {
+                    "description": "节点数",
+                    "type": "string"
+                },
+                "nodelist": {
+                    "description": "节点列表",
+                    "type": "string"
+                },
+                "state": {
+                    "description": "分区状态",
+                    "type": "string"
+                }
+            }
+        },
+        "slurm.QoSDetail": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "grace_time": {
+                    "description": "宽限时间",
+                    "type": "integer"
+                },
+                "grp_jobs": {
+                    "description": "总作业数限制",
+                    "type": "integer"
+                },
+                "grp_jobs_accrue": {
+                    "description": "总累计优先级作业数限制",
+                    "type": "integer"
+                },
+                "grp_submit_jobs": {
+                    "description": "总提交作业限制",
+                    "type": "integer"
+                },
+                "grp_tres": {
+                    "description": "总TRES限制",
+                    "type": "string"
+                },
+                "grp_tres_mins": {
+                    "description": "总TRES时间限制",
+                    "type": "string"
+                },
+                "grp_tres_run_mins": {
+                    "description": "总TRES运行时间限制",
+                    "type": "string"
+                },
+                "grp_wall": {
+                    "description": "总运行时间限制",
+                    "type": "integer"
+                },
+                "id": {
+                    "description": "ID",
+                    "type": "integer"
+                },
+                "limit_factor": {
+                    "description": "资源限制因子",
+                    "type": "number"
+                },
+                "max_jobs_accrue_pa": {
+                    "description": "每账号累计优先级作业数限制",
+                    "type": "integer"
+                },
+                "max_jobs_accrue_pu": {
+                    "description": "每用户累计优先级作业数限制",
+                    "type": "integer"
+                },
+                "max_jobs_per_account": {
+                    "description": "每账号作业数限制",
+                    "type": "integer"
+                },
+                "max_jobs_per_user": {
+                    "description": "每⽤⼾作业数限制",
+                    "type": "integer"
+                },
+                "max_submit_jobs_pa": {
+                    "description": "每账号提交作业数限制",
+                    "type": "integer"
+                },
+                "max_submit_jobs_per_user": {
+                    "description": "每用户提交作业限制",
+                    "type": "integer"
+                },
+                "max_tres_mins_pj": {
+                    "description": "作业TRES时间限制",
+                    "type": "string"
+                },
+                "max_tres_pa": {
+                    "description": "账号TRES限制",
+                    "type": "string"
+                },
+                "max_tres_pj": {
+                    "description": "作业TRES限制",
+                    "type": "string"
+                },
+                "max_tres_pn": {
+                    "description": "节点TRES限制",
+                    "type": "string"
+                },
+                "max_tres_pu": {
+                    "description": "用户TRES限制",
+                    "type": "string"
+                },
+                "max_tres_run_mins_pa": {
+                    "description": "账号TRES运行时间限制",
+                    "type": "string"
+                },
+                "max_tres_run_mins_pu": {
+                    "description": "用户TRES运行时间限制",
+                    "type": "string"
+                },
+                "max_wall_duration_per_job": {
+                    "description": "作业运行时间限制",
+                    "type": "integer"
+                },
+                "min_prio_thresh": {
+                    "description": "优先级阈值",
+                    "type": "integer"
+                },
+                "min_tres_pj": {
+                    "description": "作业TRES下限",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "preempt": {
+                    "description": "可被抢占的QoS",
+                    "type": "string"
+                },
+                "preempt_exempt_time": {
+                    "description": "抢占豁免时间",
+                    "type": "integer"
+                },
+                "preempt_mode": {
+                    "description": "抢占模式",
+                    "type": "integer"
+                },
+                "priority": {
+                    "description": "优先级因子",
+                    "type": "integer"
+                },
+                "usage_factor": {
+                    "description": "资源使用因子",
+                    "type": "number"
+                },
+                "usage_thres": {
+                    "description": "资源使用阈值",
+                    "type": "number"
+                }
+            }
+        },
+        "slurm.QoSListElem": {
+            "type": "object",
+            "properties": {
+                "Description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "Name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "grp_jobs": {
+                    "description": "总作业数限制",
+                    "type": "integer"
+                },
+                "grp_submit_jobs": {
+                    "description": "总提交作业数限制",
+                    "type": "integer"
+                },
+                "grp_wall": {
+                    "description": "总运⾏时间限制",
+                    "type": "integer"
+                },
+                "id": {
+                    "description": "ID",
+                    "type": "integer"
+                },
+                "max_jobs_per_account": {
+                    "description": "每账号作业数限制",
+                    "type": "integer"
+                },
+                "max_jobs_per_user": {
+                    "description": "每⽤⼾作业数限制",
+                    "type": "integer"
+                },
+                "max_submit_jobs_per_account": {
+                    "description": "每账号提交作业数限制",
+                    "type": "integer"
+                },
+                "max_submit_jobs_per_user": {
+                    "description": "每⽤⼾提交作业数限制",
+                    "type": "integer"
+                },
+                "max_wall_duration_per_job": {
+                    "description": "作业运⾏时间限制",
+                    "type": "integer"
+                }
+            }
+        },
+        "slurm.StepOfJobFromAccounting": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "作业步名称",
+                    "type": "string"
+                },
+                "state": {
+                    "description": "作业步状态",
+                    "type": "string"
+                }
+            }
+        },
+        "slurmrest.AccountNode": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "当前账号节点",
+                    "type": "string"
+                },
+                "organization": {
+                    "description": "单位",
+                    "type": "string"
+                },
+                "sub_accounts": {
+                    "description": "子账号名称",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sub_users": {
+                    "description": "子用户节点信息",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/slurmrest.UserNode"
+                    }
+                }
+            }
+        },
+        "slurmrest.AssociationNode": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "账户名称",
+                    "type": "string"
+                },
+                "partition": {
+                    "description": "默认分区",
+                    "type": "string"
+                },
+                "subUsers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/slurmrest.AssociationUserNode"
+                    }
+                },
+                "sub_accounts": {
+                    "description": "子账户",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "slurmrest.AssociationUserNode": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "用户名",
+                    "type": "string"
+                },
+                "partitions": {
+                    "description": "关联分区名称",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "slurmrest.UserNode": {
+            "type": "object",
+            "properties": {
+                "admin_level": {
+                    "description": "管理级别",
+                    "type": "integer"
+                },
+                "available_accounts": {
+                    "description": "可用账号",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "description": "用户名",
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

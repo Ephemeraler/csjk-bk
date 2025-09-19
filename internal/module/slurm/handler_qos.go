@@ -2,12 +2,96 @@ package slurm
 
 import (
 	"net/http"
+	"net/url"
 	"strconv"
 
+	"csjk-bk/internal/pkg/common/paging"
 	"csjk-bk/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
+
+type QoSList []QoSListElem
+type QoSListElem struct {
+	ID                      int32  `json:"id"`                              // ID
+	Name                    string `json:"Name"`                            // 名称
+	Description             string `json:"Description"`                     // 描述
+	MaxJobsPerAccount       int32  `json:"max_jobs_per_account"`            // 每账号作业数限制
+	MaxJobsPerUser          int32  `json:"max_jobs_per_user"`               // 每⽤⼾作业数限制
+	MaxSubmitJobsPerAccount int32  `json:"max_submit_jobs_per_account"`     // 每账号提交作业数限制
+	MaxSubmitJobsPerUser    int32  `json:"max_submit_jobs_per_user"`        // 每⽤⼾提交作业数限制
+	MaxWallDurationPerJob   int32  `json:"max_wall_duration_per_job"`       // 作业运⾏时间限制
+	GrpJobs                 int32  `json:"grp_jobs"`                        // 总作业数限制
+	GrpSubmitJobs           int32  `json:"grp_submit_jobs"`                 // 总提交作业数限制
+	GrpWall                 int32  `gorm:"column:grp_wall" json:"grp_wall"` // 总运⾏时间限制
+}
+
+// @Summary 获取某集群中 QoS 列表
+// @Tags 资源管理, QoS
+// @Produce json
+// @Param cluster path string true "集群名称" example("test")
+// @Param paging query bool false "是否开启分页" default(false)
+// @Param page query int false "页码，从 1 开始（仅当 paging=true 生效）" minimum(1) default(1)
+// @Param page_size query int false "每页数量，1-100（仅当 paging=true 生效）" minimum(1) maximum(100) default(20)
+// @Success 200 {object} response.Response{results=QoSList}
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/{cluster}/slurm/qos/list [get]
+func (rt *Router) HandlerGetQoSList(c *gin.Context) {
+	// 解析路径参数 cluster
+	cluster := c.Param("cluster")
+	if cluster == "" {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing cluster in path"})
+		return
+	}
+
+	var pq paging.PagingQuery
+	_ = c.ShouldBindQuery(&pq)
+	pq.SetDefaults(1, 20, 100)
+
+	// 查询 slurmrestd 地址
+	addr, err := rt.db.GetSlurmrestdAddr(cluster)
+	if err != nil || addr == "" {
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to resolve slurmrestd address: " + err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, response.Response{Detail: "empty slurmrestd address for cluster"})
+		}
+		return
+	}
+
+	// 调用 slurmrest 客户端，获取当前页数据
+	items, total, err := rt.slurmrestc.GetQosAll(c.Request.Context(), addr, pq.Paging, pq.Page, pq.PageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to fetch qos list: " + err.Error()})
+		return
+	}
+
+	// 获取总数用于分页：若分页开启，则再拉取一次不分页数据以获取总量
+	var prev, next url.URL
+	if pq.Paging {
+		prev, next = response.BuildPageLinks(c.Request.URL, pq.Page, pq.PageSize, total)
+	}
+
+	// 组装输出列表
+	out := make(QoSList, 0, len(items))
+	for _, it := range items {
+		out = append(out, QoSListElem{
+			ID:                      it.ID,
+			Name:                    it.Name,
+			Description:             it.Description,
+			MaxJobsPerAccount:       it.MaxJobsPA,
+			MaxJobsPerUser:          it.MaxJobsPerUser,
+			MaxSubmitJobsPerAccount: it.MaxSubmitJobsPA,
+			MaxSubmitJobsPerUser:    it.MaxSubmitJobsPerUser,
+			MaxWallDurationPerJob:   it.MaxWallDurationPerJob,
+			GrpJobs:                 it.GrpJobs,
+			GrpSubmitJobs:           it.GrpSubmitJobs,
+			GrpWall:                 it.GrpWall,
+		})
+	}
+	c.JSON(http.StatusOK, response.Response{Count: total, Previous: prev, Next: next, Results: out})
+}
 
 type QoSDetail struct {
 	ID                    int32   `json:"id"`                        // ID
@@ -46,121 +130,15 @@ type QoSDetail struct {
 	LimitFactor           float64 `json:"limit_factor"`              // 资源限制因子
 }
 
-// @Summary 获取某集群中 QoS 列表
-// @Tags slurm
-// @Produce json
-// @Param cluster path string true "集群名称" example("test")
-// @Param paging query bool false "是否开启分页" default(true)
-// @Param page query int false "页码，从 1 开始（仅当 paging=true 生效）" minimum(1) default(1)
-// @Param page_size query int false "每页数量，1-100（仅当 paging=true 生效）" minimum(1) maximum(100) default(20)
-// @Success 200 {object} response.Response{results=QoSList}
-// @Failure 400 {object} response.Response
-// @Failure 500 {object} response.Response
-// @Router /api/v1/{cluster}/slurm/qos/list [get]
-func (rt *Router) HandlerGetQoSList(c *gin.Context) {
-	// 解析路径参数 cluster
-	cluster := c.Param("cluster")
-	if cluster == "" {
-		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing cluster in path"})
-		return
-	}
-
-	// 查询 slurmrestd 地址
-	addr, err := rt.db.GetSlurmrestdAddr(cluster)
-	if err != nil || addr == "" {
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to resolve slurmrestd address: " + err.Error()})
-		} else {
-			c.JSON(http.StatusInternalServerError, response.Response{Detail: "empty slurmrestd address for cluster"})
-		}
-		return
-	}
-
-	// 解析查询参数
-	paging := true
-	if v := c.Query("paging"); v != "" {
-		if b, perr := strconv.ParseBool(v); perr == nil {
-			paging = b
-		} else {
-			c.JSON(http.StatusBadRequest, response.Response{Detail: "invalid query param: paging"})
-			return
-		}
-	}
-	page := 1
-	if v := c.Query("page"); v != "" {
-		if n, perr := strconv.Atoi(v); perr == nil && n > 0 {
-			page = n
-		} else {
-			c.JSON(http.StatusBadRequest, response.Response{Detail: "invalid query param: page"})
-			return
-		}
-	}
-	pageSize := 20
-	if v := c.Query("page_size"); v != "" {
-		if n, perr := strconv.Atoi(v); perr == nil && n > 0 {
-			pageSize = n
-		} else {
-			c.JSON(http.StatusBadRequest, response.Response{Detail: "invalid query param: page_size"})
-			return
-		}
-	}
-
-	// 调用 slurmrest 客户端，获取当前页数据
-	items, total, err := rt.slurmrestc.GetQosAll(c.Request.Context(), addr, paging, page, pageSize)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to fetch qos list: " + err.Error()})
-		return
-	}
-
-	// 获取总数用于分页：若分页开启，则再拉取一次不分页数据以获取总量
-	prev, next := response.BuildPageLinks(c.Request.URL, page, pageSize, total)
-
-	// 组装输出列表
-	out := make(QoSList, 0, len(items))
-	for _, it := range items {
-		out = append(out, QoSListElem{
-			ID:                      it.ID,
-			Name:                    it.Name,
-			Description:             it.Description,
-			MaxJobsPerAccount:       it.MaxJobsPA,
-			MaxJobsPerUser:          it.MaxJobsPerUser,
-			MaxSubmitJobsPerAccount: it.MaxSubmitJobsPA,
-			MaxSubmitJobsPerUser:    it.MaxSubmitJobsPerUser,
-			MaxWallDurationPerJob:   it.MaxWallDurationPerJob,
-			GrpJobs:                 it.GrpJobs,
-			GrpSubmitJobs:           it.GrpSubmitJobs,
-			GrpWall:                 it.GrpWall,
-		})
-	}
-	// 返回带分页信息的响应
-	// 注意：当 paging=false 时，prev/next 为空，count 为列表长度
-	c.JSON(http.StatusOK, response.Response{Count: total, Previous: prev, Next: next, Results: out})
-}
-
-type QoSList []QoSListElem
-type QoSListElem struct {
-	ID                      int32  `json:"id"`                              // ID
-	Name                    string `json:"Name"`                            // 名称
-	Description             string `json:"Description"`                     // 描述
-	MaxJobsPerAccount       int32  `json:"max_jobs_per_account"`            // 每账号作业数限制
-	MaxJobsPerUser          int32  `json:"max_jobs_per_user"`               // 每⽤⼾作业数限制
-	MaxSubmitJobsPerAccount int32  `json:"max_submit_jobs_per_account"`     // 每账号提交作业数限制
-	MaxSubmitJobsPerUser    int32  `json:"max_submit_jobs_per_user"`        // 每⽤⼾提交作业数限制
-	MaxWallDurationPerJob   int32  `json:"max_wall_duration_per_job"`       // 作业运⾏时间限制
-	GrpJobs                 int32  `json:"grp_jobs"`                        // 总作业数限制
-	GrpSubmitJobs           int32  `json:"grp_submit_jobs"`                 // 总提交作业数限制
-	GrpWall                 int32  `gorm:"column:grp_wall" json:"grp_wall"` // 总运⾏时间限制
-}
-
 // @Summary 获取某集群中某个 QoS 详情
-// @Tags slurm
+// @Tags 资源管理, QoS
 // @Produce json
 // @Param cluster path string true "集群名称" example("test")
 // @Param id path int true "QoS ID"
 // @Success 200 {object} response.Response{results=QoSDetail}
 // @Failure 400 {object} response.Response
 // @Failure 500 {object} response.Response
-// @Router /api/v1/:cluster/slurm/qos/:id/detail [get]
+// @Router /api/v1/{cluster}/slurm/qos/{id}/detail [get]
 func (rt *Router) HandlerGetQoSDetail(c *gin.Context) {
 	// 解析路径参数 cluster 和 id
 	cluster := c.Param("cluster")
@@ -187,7 +165,7 @@ func (rt *Router) HandlerGetQoSDetail(c *gin.Context) {
 	}
 
 	// 调用 slurmrest 客户端
-	q, err := rt.slurmrestc.GetQos(c.Request.Context(), addr, id)
+	q, err := rt.slurmrestc.GetQos(c.Request.Context(), addr, uint32(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to fetch qos detail: " + err.Error()})
 		return
@@ -231,4 +209,51 @@ func (rt *Router) HandlerGetQoSDetail(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.Response{Results: out})
+}
+
+type QoSNameList []string
+
+// @Summary 获取某集群中所有 QoS 名称列表
+// @Tags 资源管理, 用户管理
+// @Produce json
+// @Param cluster path string true "集群名称" example("test")
+// @Success 200 {object} response.Response{results=QoSNameList}
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/{cluster}/slurm/qos/name/list [get]
+func (rt *Router) HandlerGetQosNameList(c *gin.Context) {
+	// 解析路径参数 cluster
+	cluster := c.Param("cluster")
+	if cluster == "" {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing cluster in path"})
+		return
+	}
+
+	// 查询 slurmrestd 地址
+	addr, err := rt.db.GetSlurmrestdAddr(cluster)
+	if err != nil || addr == "" {
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to resolve slurmrestd address: " + err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, response.Response{Detail: "empty slurmrestd address for cluster"})
+		}
+		return
+	}
+
+	// 获取全部 QoS 列表（不分页）
+	items, total, err := rt.slurmrestc.GetQosAll(c.Request.Context(), addr, false, 0, 0)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to fetch qos list: " + err.Error()})
+		return
+	}
+
+	// 提取名称列表
+	names := make(QoSNameList, 0, len(items))
+	for _, q := range items {
+		if q.Name != "" {
+			names = append(names, q.Name)
+		}
+	}
+
+	c.JSON(http.StatusOK, response.Response{Count: total, Results: names})
 }
