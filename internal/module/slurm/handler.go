@@ -1,14 +1,17 @@
 package slurm
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
+	dbpg "csjk-bk/internal/pkg/client/postgres"
 	"csjk-bk/internal/pkg/common/paging"
 	"csjk-bk/internal/pkg/common/slurm"
+	"csjk-bk/internal/pkg/common/time"
 	"csjk-bk/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -716,4 +719,365 @@ func (rt *Router) HandlerGetAccountingJobDetail(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.Response{Results: detail})
+}
+
+var ApplicationStateMaps = map[int]string{
+	dbpg.APPLICATION_STATE_PASSED:    "通过",
+	dbpg.APPLICATION_STATE_REJECTED:  "拒绝",
+	dbpg.APPLICATION_STATE_REVIEWING: "审核中",
+}
+
+type ApplicationList []Application
+type Application struct {
+	ID       int       `json:"id"`
+	State    string    `json:"state"`     // 审核状态
+	ApplyAt  time.Time `json:"apply_at"`  // 申请日期
+	ReviewAt time.Time `json:"review_at"` // 审核日期
+	Decision string    `json:"decision"`  // 审核结果
+	ApplicationContent
+}
+type ApplicationContent struct {
+	User            string `json:"user"`             // 预约用户
+	ReservationName string `json:"reservation_name"` // 预约名称 ReservationName
+	PartitionName   string `json:"partition"`        // 分区名称 PartitionName
+	StartTime       string `json:"start"`            // 开始时间 StartTime
+	Duration        string `json:"duration"`         // 持续时间 Duration
+	Nodes           string `json:"nodes"`            // 预约节点 Nodes
+	NodeCnt         int    `json:"node_cnt"`         // 预约节点数
+	Flags           string `json:"flags"`            // 预约类型 Flags
+}
+
+// HandlerGetReservationApps 获取资源预约申请
+// API: GET /api/v1/:cluster/slurm/reservation/applications?applier=xxx&paging=xxx&page=xxx&page_size=xxx
+// 请求参数解释:
+//   - cluster: 对应某个集群的申请
+//   - applier: 获取该 applier 的资源预约申请. 允许为空或者不传递, 表示获取所有人的预约申请.
+//   - paging: 表示是否启动分页, paging = true 时表示分页, page, page_size 有效. 否则不分页.
+//
+// 执行流程:
+//   - 解析参数;
+//   - 根据参数调用 db.GetApplications 申请类型为 APPLICATION_CLASS_RESOURCE. Application.Content 对应 ApplicationContent;
+//   - 构造返回响应;
+//
+// @Summary 获取资源预约申请列表
+// @Tags 资源管理, 资源预约
+// @Produce json
+// @Param cluster path string true "集群名称" example("test")
+// @Param applier query string false "申请人，缺省为全部"
+// @Param paging query bool false "是否分页" default(true)
+// @Param page query int false "页码，从1开始" default(1)
+// @Param page_size query int false "每页条数" default(20)
+// @Success 200 {object} response.Response{results=ApplicationList}
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/{cluster}/slurm/reservation/applications [get]
+func (rt *Router) HandlerGetReservationApps(c *gin.Context) {
+	cluster := c.Param("cluster")
+	if strings.TrimSpace(cluster) == "" {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing cluster in path"})
+		return
+	}
+	var pq paging.PagingQuery
+	_ = c.ShouldBindQuery(&pq)
+	pq.SetDefaults(1, 20, 100)
+	applier := strings.TrimSpace(c.Query("applier"))
+
+	apps, total, err := rt.db.GetApplications(c.Request.Context(), dbpg.APPLICATION_CLASS_RESOURCE, applier, pq.Paging, pq.Page, pq.PageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to fetch reservation applications: " + err.Error()})
+		return
+	}
+
+	list := make(ApplicationList, 0, len(apps))
+	for _, a := range apps {
+		item := Application{
+			ID:       a.ID,
+			State:    ApplicationStateMaps[a.State],
+			ApplyAt:  time.Time(a.ApplyAt),
+			ReviewAt: time.Time(a.ReviewAt),
+			Decision: a.Decision,
+		}
+		if strings.TrimSpace(a.Content) != "" {
+			var ac ApplicationContent
+			_ = json.Unmarshal([]byte(a.Content), &ac)
+			item.ApplicationContent = ac
+		}
+		list = append(list, item)
+	}
+
+	var prev, next url.URL
+	if pq.Paging {
+		prev, next = response.BuildPageLinks(c.Request.URL, pq.Page, pq.PageSize, total)
+	}
+	c.JSON(http.StatusOK, response.Response{Count: total, Previous: prev, Next: next, Results: list})
+}
+
+// HandlerGetApplicationDecision 获取某个申请的审查结果
+// API: GET /api/v1/:cluster/slurm/reservation/application/:id/decision
+// 请求参数解释:
+//   - cluster: 对应某个集群的申请, 该字段不会被使用仅为了保证路径命名一致性. 其可靠性由查询保证.
+//   - id: 申请ID, 对应数据库中 Application.ID 字段
+//
+// 执行流程：
+//   - 解析参数;
+//   - 根据参数调用 db.GetApplicationDecision 获取审核结果.
+//   - 组织响应数据
+//
+// @Summary 获取资源预约申请的审核结果
+// @Tags 资源管理, 资源预约
+// @Produce json
+// @Param cluster path string true "集群名称" example("test")
+// @Param id path int true "申请ID"
+// @Success 200 {object} response.Response{results=string}
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/{cluster}/slurm/reservation/application/{id}/decision [get]
+func (rt *Router) HandlerGetApplicationDecision(c *gin.Context) {
+	cluster := c.Param("cluster")
+	if strings.TrimSpace(cluster) == "" {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing cluster in path"})
+		return
+	}
+	sid := strings.TrimSpace(c.Param("id"))
+	if sid == "" {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing application id in path"})
+		return
+	}
+	id, err := strconv.Atoi(sid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "invalid application id: must be integer"})
+		return
+	}
+	dec, err := rt.db.GetApplicationDecision(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to fetch application decision: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, response.Response{Results: dec})
+}
+
+// HandlerCreateApplication 创建新申请
+// API: POST /api/v1/:cluster/slurm/reservation/application
+// 请求体参数: ApplicationContent
+// 执行流程:
+//   - 解析参数
+//   - 构造 db.AddApplication 所需参数并调用创建申请 Application.Class = APPLICATION_CLASS_RESOURCE.
+//   - 构造响应返回
+//
+// @Summary 创建资源预约申请
+// @Tags 资源管理, 资源预约
+// @Produce json
+// @Param cluster path string true "集群名称" example("test")
+// @Param body body ApplicationContent true "申请内容"
+// @Success 200 {object} response.Response{results=string}
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/{cluster}/slurm/reservation/application [post]
+func (rt *Router) HandlerCreateApplication(c *gin.Context) {
+	cluster := c.Param("cluster")
+	if strings.TrimSpace(cluster) == "" {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing cluster in path"})
+		return
+	}
+	var in ApplicationContent
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "invalid request body: " + err.Error()})
+		return
+	}
+	b, err := json.Marshal(in)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to marshal application content: " + err.Error()})
+		return
+	}
+	app := dbpg.Application{
+		Class:   dbpg.APPLICATION_CLASS_RESOURCE,
+		State:   dbpg.APPLICATION_STATE_REVIEWING,
+		Applier: in.User,
+		Content: string(b),
+	}
+	if err := rt.db.AddApplication(c.Request.Context(), app); err != nil {
+		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to add application: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, response.Response{Results: "ok"})
+}
+
+// HandlerCreateApplication 更新申请
+// API: /api/v1/:cluster/slurm/reservation/application/:id
+// 请求参数解释:
+//   - cluster: 对应某个集群的申请, 该字段不会被使用仅为了保证路径命名一致性. 其可靠性由查询保证.
+//   - id: 申请ID, 对应数据库中 Application.ID 字段
+//
+// 请求体参数: ApplicationContent
+//
+// 执行流程:
+//   - 解析参数
+//   - 构造 db.UpdateApplication 所需参数并调用更新申请.
+//   - 构造响应返回
+//
+// @Summary 更新资源预约申请
+// @Tags 资源管理, 资源预约
+// @Produce json
+// @Param cluster path string true "集群名称" example("test")
+// @Param id path int true "申请ID"
+// @Param body body ApplicationContent true "申请内容"
+// @Success 200 {object} response.Response{results=string}
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/{cluster}/slurm/reservation/application/{id} [put]
+func (rt *Router) HandlerUpdateApplication(c *gin.Context) {
+	cluster := c.Param("cluster")
+	if strings.TrimSpace(cluster) == "" {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing cluster in path"})
+		return
+	}
+	sid := strings.TrimSpace(c.Param("id"))
+	if sid == "" {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing application id in path"})
+		return
+	}
+	id, err := strconv.Atoi(sid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "invalid application id: must be integer"})
+		return
+	}
+	var in ApplicationContent
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "invalid request body: " + err.Error()})
+		return
+	}
+	b, err := json.Marshal(in)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to marshal application content: " + err.Error()})
+		return
+	}
+	if err := rt.db.UpdateApplication(c.Request.Context(), id, string(b)); err != nil {
+		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to update application: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, response.Response{Results: "ok"})
+}
+
+// HandlerDelApplication 删除某个申请
+// API: /api/v1/:cluster/slurm/reservation/application/:id
+// 请求参数解释:
+//   - cluster: 对应某个集群的申请, 该字段不会被使用仅为了保证路径命名一致性. 其可靠性由查询保证.
+//   - id: 申请ID, 对应数据库中 Application.ID 字段
+//
+// 执行流程:
+//   - 解析参数
+//   - 构造 db.DelApplication 所需参数并调用完成申请删除.
+//   - 构造响应返回
+//
+// @Summary 删除资源预约申请
+// @Tags 资源管理, 资源预约
+// @Produce json
+// @Param cluster path string true "集群名称" example("test")
+// @Param id path int true "申请ID"
+// @Success 200 {object} response.Response{results=string}
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/{cluster}/slurm/reservation/application/{id} [delete]
+func (rt *Router) HandlerDelApplication(c *gin.Context) {
+	cluster := c.Param("cluster")
+	if strings.TrimSpace(cluster) == "" {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing cluster in path"})
+		return
+	}
+	sid := strings.TrimSpace(c.Param("id"))
+	if sid == "" {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing application id in path"})
+		return
+	}
+	id, err := strconv.Atoi(sid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "invalid application id: must be integer"})
+		return
+	}
+	if err := rt.db.DelApplication(c.Request.Context(), id); err != nil {
+		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to delete application: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, response.Response{Results: "ok"})
+}
+
+type Review struct {
+	Approve  bool `json:"approve"`
+	Decision string
+	ApplicationContent
+}
+
+// HandlerRevireApplication 审核某预约
+// API: PUT /api/v1/:cluster/slurm/reservation/application/:id/review
+// 请求参数解释:
+//   - cluster: 对应某个集群的申请, 该字段不会被使用仅为了保证路径命名一致性. 其可靠性由查询保证.
+//   - id: 申请ID, 对应数据库中 Application.ID 字段
+//
+// 请求体参数: Review
+// approve: 为bool类型, 表示是否通过审核, 若通过则 nodelist 参数生效, 为节点参数列表不能为空. 若 approve=false, 则不需要nodelist参数.
+//
+// 执行流程
+//   - 解析参数
+//   - 若 approve == true, 则调用 DoReservation 执行实际预约操作.
+//   - 调用 db.DoReview, approve=true 对应 state = APPLICATION_STATE_PASSED. approve=false, 对应 state = APPLICATION_STATE_REJECTED.
+//
+// @Summary 审核资源预约申请
+// @Tags 资源管理, 资源预约
+// @Produce json
+// @Param cluster path string true "集群名称" example("test")
+// @Param id path int true "申请ID"
+// @Param body body Review true "审核结论"
+// @Success 200 {object} response.Response{results=string}
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/{cluster}/slurm/reservation/application/{id}/review [put]
+func (rt *Router) HandlerRevireApplication(c *gin.Context) {
+	cluster := c.Param("cluster")
+	if strings.TrimSpace(cluster) == "" {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing cluster in path"})
+		return
+	}
+	sid := strings.TrimSpace(c.Param("id"))
+	if sid == "" {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "missing application id in path"})
+		return
+	}
+	id, err := strconv.Atoi(sid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "invalid application id: must be integer"})
+		return
+	}
+	var in Review
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, response.Response{Detail: "invalid request body: " + err.Error()})
+		return
+	}
+	state := dbpg.APPLICATION_STATE_REJECTED
+	if in.Approve {
+		if strings.TrimSpace(in.Nodes) == "" {
+			c.JSON(http.StatusBadRequest, response.Response{Detail: "nodelist is required when approve=true"})
+			return
+		}
+		if err := DoReservation(in.Nodes); err != nil {
+			state = dbpg.APPLICATION_STATE_PASSED_UNSUCCESS
+		} else {
+			state = dbpg.APPLICATION_STATE_PASSED
+		}
+	}
+
+	contentBytes, err := json.Marshal(in.ApplicationContent)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to marshal review content: " + err.Error()})
+		return
+	}
+	if err := rt.db.DoReview(c.Request.Context(), id, state, in.Decision, string(contentBytes)); err != nil {
+		c.JSON(http.StatusInternalServerError, response.Response{Detail: "failed to update review: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, response.Response{Results: "ok"})
+}
+
+// TODO: 模拟
+func DoReservation(nodelist string) error {
+	return nil
 }

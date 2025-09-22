@@ -10,6 +10,1145 @@
     },
     "basePath": "/api/v1",
     "paths": {
+        "/api/v1/:cluster/ldap/group": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "在某集群 ldap 中创建用户组",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/ldap/group/:name": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "在某集群 ldap 中更新用户组信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户组名称",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "在某集群 ldap 中删除用户组",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户组名称",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/ldap/group/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "获取 ldap 用户组列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "是否分页",
+                        "name": "paging",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码，从1开始",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/ldap.GroupListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/ldap/user": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "在某集群 ldap 中创建用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/ldap/user/:name": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "在某集群 ldap 中更新用户信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "在某集群 ldap 中删除用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/ldap/user/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "用户管理"
+                ],
+                "summary": "获取某集群 LDAP 用户列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "是否分页",
+                        "name": "paging",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码，从1开始",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/ldap.User"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/lustre/:user/quota": {
+            "put": {
+                "description": "在某集群更新用户 Lustre 配额.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "存储管理"
+                ],
+                "summary": "在某集群更新用户 Lustre 配额",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "user",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "配额参数（需包含 filesystem，其他字段留空表示不更新）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/lustre.UserQuota"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/lustre/quota": {
+            "put": {
+                "description": "更新某挂载点的默认配额上限（非用户维度）。参数 cluster 为保留参数。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "存储管理"
+                ],
+                "summary": "更新 Lustre 全局（默认）配额",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "默认配额（仅使用 filesystem 与限额字段，user 忽略）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/lustre.UserQuota"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/lustre/quota/application": {
+            "post": {
+                "description": "参数 cluster 为保留参数, 当前整体设计就不支持多集群.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "存储管理"
+                ],
+                "summary": "提交配额申请",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "申请内容（用户配额信息）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/lustre.UserQuota"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/lustre/quota/application/{id}": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "存储管理"
+                ],
+                "summary": "更新配额申请",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "申请ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "申请内容（用户配额信息）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/lustre.UserQuota"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "存储管理"
+                ],
+                "summary": "删除配额申请",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "申请ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/lustre/quota/application/{id}/decision": {
+            "get": {
+                "description": "获取某个配额申请的审核结果. 参数 cluster 为保留参数, 当前整体设计就不支持多集群.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "存储管理"
+                ],
+                "summary": "获取某个配额申请的审核结果",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "申请ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/lustre/quota/application/{id}/review": {
+            "post": {
+                "description": "根据审核结果执行实际配额配置（通过时）并更新申请的审核状态与内容",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "存储管理"
+                ],
+                "summary": "审核配额申请",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "申请ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "审核结果与配额内容",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/lustre.Review"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/lustre/quota/applications": {
+            "get": {
+                "description": "获取配额申请列表，支持按申请人筛选与分页；Actual 字段依据 KD 查询当前实际配额并以默认值兜底",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "存储管理"
+                ],
+                "summary": "获取配额申请列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "申请人名称, 为空则返回所有申请",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "是否分页",
+                        "name": "paging",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码，从1开始",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/lustre.QuotaApplication"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/:cluster/lustre/quotas": {
+            "get": {
+                "description": "获取某集群 Lustre 用户配额. 当未指定user时, 将会获取该集群所有用户(ldap)的配额. 参数 cluster 为保留参数, 当前整体设计就不支持多集群.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "存储管理"
+                ],
+                "summary": "获取某集群 Lustre 用户配额",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "用户名，可重复传多个 user=alice\u0026user=bob",
+                        "name": "user",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "是否分页",
+                        "name": "paging",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码，从1开始",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/lustre.UserQuota"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/alerts/firing": {
             "get": {
                 "description": "从报警平台(alertmanager)中获取实时报警信息, 请求参数 class 对应分屏设计. 不分屏时, class=all. 分屏时 class=\"\u003c对应系统\u003e\"",
@@ -1463,6 +2602,413 @@
                 }
             }
         },
+        "/api/v1/{cluster}/slurm/reservation/application": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "资源预约"
+                ],
+                "summary": "创建资源预约申请",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "申请内容",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/slurm.ApplicationContent"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/reservation/application/{id}": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "资源预约"
+                ],
+                "summary": "更新资源预约申请",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "申请ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "申请内容",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/slurm.ApplicationContent"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "资源预约"
+                ],
+                "summary": "删除资源预约申请",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "申请ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/reservation/application/{id}/decision": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "资源预约"
+                ],
+                "summary": "获取资源预约申请的审核结果",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "申请ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/reservation/application/{id}/review": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "资源预约"
+                ],
+                "summary": "审核资源预约申请",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "申请ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "审核结论",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/slurm.Review"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/{cluster}/slurm/reservation/applications": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "资源预约"
+                ],
+                "summary": "获取资源预约申请列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "申请人，缺省为全部",
+                        "name": "applier",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "是否分页",
+                        "name": "paging",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码，从1开始",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/slurm.Application"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/{cluster}/slurm/scheduling/job/list": {
             "get": {
                 "description": "返回当前调度队列中的作业列表，可选分页参数",
@@ -1707,6 +3253,192 @@
                 }
             }
         },
+        "ldap.GroupListItem": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "ldap.description",
+                    "type": "string"
+                },
+                "gid": {
+                    "description": "ldap.GidNumber",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "ldap.cn",
+                    "type": "string"
+                },
+                "users": {
+                    "description": "ldap.memberuid",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "ldap.User": {
+            "type": "object",
+            "properties": {
+                "additional_groups": {
+                    "description": "需根据 ldap.uid 单独查询",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cn": {
+                    "description": "全名",
+                    "type": "string"
+                },
+                "group": {
+                    "description": "对应 ldap.gidNumber",
+                    "type": "string"
+                },
+                "home_dir": {
+                    "description": "家目录",
+                    "type": "string"
+                },
+                "mobile": {
+                    "description": "电话",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "对应 ldap.uid",
+                    "type": "string"
+                },
+                "ou": {
+                    "description": "部门",
+                    "type": "string"
+                },
+                "uid": {
+                    "description": "对应 ldap.uidNumber",
+                    "type": "string"
+                }
+            }
+        },
+        "lustre.QuotaApplication": {
+            "type": "object",
+            "properties": {
+                "actual": {
+                    "description": "当前实际配额",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/lustre.UserQuota"
+                        }
+                    ]
+                },
+                "apply": {
+                    "description": "申请内容",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/lustre.UserQuota"
+                        }
+                    ]
+                },
+                "apply_at": {
+                    "description": "申请日期",
+                    "type": "string"
+                },
+                "decision": {
+                    "description": "审核结果",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "review_at": {
+                    "description": "审核日期",
+                    "type": "string"
+                },
+                "state": {
+                    "description": "审核状态, 0: 审核中, 1: 完成",
+                    "type": "string"
+                }
+            }
+        },
+        "lustre.Review": {
+            "type": "object",
+            "properties": {
+                "approve": {
+                    "description": "是否通过审核",
+                    "type": "boolean"
+                },
+                "block_quota_grace": {
+                    "description": "块配额宽限期",
+                    "type": "string"
+                },
+                "block_quota_hard_limit": {
+                    "description": "块配额硬限制",
+                    "type": "string"
+                },
+                "block_quota_soft_limit": {
+                    "description": "块配额软限制",
+                    "type": "string"
+                },
+                "decision": {
+                    "description": "审核意见",
+                    "type": "string"
+                },
+                "file_quota_grace": {
+                    "description": "文件配额宽限期",
+                    "type": "string"
+                },
+                "file_quota_hard_limit": {
+                    "description": "文件配额硬限制",
+                    "type": "string"
+                },
+                "file_quota_soft_limit": {
+                    "description": "文件配额软限制",
+                    "type": "string"
+                },
+                "filesystem": {
+                    "description": "文件系统",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "用户",
+                    "type": "string"
+                }
+            }
+        },
+        "lustre.UserQuota": {
+            "type": "object",
+            "properties": {
+                "block_quota_grace": {
+                    "description": "块配额宽限期",
+                    "type": "string"
+                },
+                "block_quota_hard_limit": {
+                    "description": "块配额硬限制",
+                    "type": "string"
+                },
+                "block_quota_soft_limit": {
+                    "description": "块配额软限制",
+                    "type": "string"
+                },
+                "file_quota_grace": {
+                    "description": "文件配额宽限期",
+                    "type": "string"
+                },
+                "file_quota_hard_limit": {
+                    "description": "文件配额硬限制",
+                    "type": "string"
+                },
+                "file_quota_soft_limit": {
+                    "description": "文件配额软限制",
+                    "type": "string"
+                },
+                "filesystem": {
+                    "description": "文件系统",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "用户",
+                    "type": "string"
+                }
+            }
+        },
         "model.JobsStepInScheduling": {
             "type": "object",
             "properties": {
@@ -1772,6 +3504,99 @@
                     "type": "string"
                 },
                 "results": {}
+            }
+        },
+        "slurm.Application": {
+            "type": "object",
+            "properties": {
+                "apply_at": {
+                    "description": "申请日期",
+                    "type": "string"
+                },
+                "decision": {
+                    "description": "审核结果",
+                    "type": "string"
+                },
+                "duration": {
+                    "description": "持续时间 Duration",
+                    "type": "string"
+                },
+                "flags": {
+                    "description": "预约类型 Flags",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "node_cnt": {
+                    "description": "预约节点数",
+                    "type": "integer"
+                },
+                "nodes": {
+                    "description": "预约节点 Nodes",
+                    "type": "string"
+                },
+                "partition": {
+                    "description": "分区名称 PartitionName",
+                    "type": "string"
+                },
+                "reservation_name": {
+                    "description": "预约名称 ReservationName",
+                    "type": "string"
+                },
+                "review_at": {
+                    "description": "审核日期",
+                    "type": "string"
+                },
+                "start": {
+                    "description": "开始时间 StartTime",
+                    "type": "string"
+                },
+                "state": {
+                    "description": "审核状态",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "预约用户",
+                    "type": "string"
+                }
+            }
+        },
+        "slurm.ApplicationContent": {
+            "type": "object",
+            "properties": {
+                "duration": {
+                    "description": "持续时间 Duration",
+                    "type": "string"
+                },
+                "flags": {
+                    "description": "预约类型 Flags",
+                    "type": "string"
+                },
+                "node_cnt": {
+                    "description": "预约节点数",
+                    "type": "integer"
+                },
+                "nodes": {
+                    "description": "预约节点 Nodes",
+                    "type": "string"
+                },
+                "partition": {
+                    "description": "分区名称 PartitionName",
+                    "type": "string"
+                },
+                "reservation_name": {
+                    "description": "预约名称 ReservationName",
+                    "type": "string"
+                },
+                "start": {
+                    "description": "开始时间 StartTime",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "预约用户",
+                    "type": "string"
+                }
             }
         },
         "slurm.AssociationDetail": {
@@ -2416,6 +4241,49 @@
                 "max_wall_duration_per_job": {
                     "description": "作业运⾏时间限制",
                     "type": "integer"
+                }
+            }
+        },
+        "slurm.Review": {
+            "type": "object",
+            "properties": {
+                "approve": {
+                    "type": "boolean"
+                },
+                "decision": {
+                    "type": "string"
+                },
+                "duration": {
+                    "description": "持续时间 Duration",
+                    "type": "string"
+                },
+                "flags": {
+                    "description": "预约类型 Flags",
+                    "type": "string"
+                },
+                "node_cnt": {
+                    "description": "预约节点数",
+                    "type": "integer"
+                },
+                "nodes": {
+                    "description": "预约节点 Nodes",
+                    "type": "string"
+                },
+                "partition": {
+                    "description": "分区名称 PartitionName",
+                    "type": "string"
+                },
+                "reservation_name": {
+                    "description": "预约名称 ReservationName",
+                    "type": "string"
+                },
+                "start": {
+                    "description": "开始时间 StartTime",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "预约用户",
+                    "type": "string"
                 }
             }
         },

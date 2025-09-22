@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -65,6 +66,12 @@ func (c *Client) Close() {
 // GetSlurmrestAddr 获取 slurmrestd 服务地址
 func (c *Client) GetSlurmrestdAddr(cluster string) (string, error) {
 	return "192.168.2.35:39999", nil
+	// return "localhost:8080", nil
+}
+
+// GetLustreServer 获取某集群 Lustre Server 的地址
+func (c *Client) GetLustreServer(cluster string) (string, error) {
+	return "lustre.com", nil
 }
 
 type Alerts []*Alert
@@ -231,3 +238,271 @@ func (c *Client) GetAlerts(ctx context.Context, from, to time.Time, status []str
 
 	return alerts, int(total), nil
 }
+
+const (
+	APPLICATION_STATE_REJECTED = iota
+	APPLICATION_STATE_PASSED
+	APPLICATION_STATE_REVIEWING
+	APPLICATION_STATE_PASSED_UNSUCCESS
+)
+
+const (
+	APPLICATION_CLASS_QUOTA    = "lustre"
+	APPLICATION_CLASS_RESOURCE = "slurm"
+)
+
+type Applications []Application
+type Application struct {
+	ID       int
+	Class    string
+	State    int
+	ApplyAt  time.Time
+	ReviewAt time.Time
+	Applier  string
+	Reviewer string
+	Decision string
+	Content  string
+}
+
+// GetApplications 根据申请人ID筛选其申请, 并按照 State, ApplyAt 降序排序.
+func (c *Client) GetApplications(ctx context.Context, applyType string, applier string, paging bool, page, pageSize int) (Applications, int, error) {
+	conn, err := c.pool.Acquire(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("无法获取数据库连接: %w", err)
+	}
+	defer conn.Release()
+
+	// 仅返回配额类申请，并可按申请人过滤（applyid = -1 时返回全部），按 State DESC, ApplyAt DESC 排序
+	// 1) 构建 where 子句（供 count 和 list 复用）
+	var whereSB strings.Builder
+	args := make([]any, 0, 4)
+	idx := 1
+	whereSB.WriteString(" WHERE class = $")
+	whereSB.WriteString(fmt.Sprint(idx))
+	args = append(args, applyType)
+	idx++
+	if applier != "" {
+		whereSB.WriteString(" AND applier = $")
+		whereSB.WriteString(fmt.Sprint(idx))
+		args = append(args, applier)
+		idx++
+	}
+
+	// 2) 统计总数（不分页）
+	countSQL := "SELECT COUNT(*) FROM applications" + whereSB.String()
+	var total int64
+	if err := conn.QueryRow(ctx, countSQL, args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("统计总数失败: %w", err)
+	}
+
+	// 3) 查询列表（可分页）
+	var listSB strings.Builder
+	listSB.WriteString("SELECT id, state, applyat, reviewat, applier, reviewer, decision, content::text FROM applications")
+	listSB.WriteString(whereSB.String())
+	listSB.WriteString(" ORDER BY state DESC, applyat DESC")
+
+	listArgs := make([]any, len(args))
+	copy(listArgs, args)
+	lidx := idx
+	if paging && pageSize > 0 {
+		listSB.WriteString(" LIMIT $")
+		listSB.WriteString(fmt.Sprint(lidx))
+		listArgs = append(listArgs, pageSize)
+		lidx++
+		if page > 0 {
+			off := (page - 1) * pageSize
+			if off < 0 {
+				off = 0
+			}
+			listSB.WriteString(" OFFSET $")
+			listSB.WriteString(fmt.Sprint(lidx))
+			listArgs = append(listArgs, off)
+			lidx++
+		}
+	}
+
+	rows, err := conn.Query(ctx, listSB.String(), listArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("查询数据库失败: %w", err)
+	}
+	defer rows.Close()
+
+	list := make(Applications, 0)
+	for rows.Next() {
+		var (
+			a   Application
+			rAt sql.NullTime
+			rer sql.NullString
+			dec sql.NullString
+		)
+		if err := rows.Scan(&a.ID, &a.State, &a.ApplyAt, &rAt, &a.Applier, &rer, &dec, &a.Content); err != nil {
+			return nil, 0, fmt.Errorf("读取数据失败: %w", err)
+		}
+		if rAt.Valid {
+			a.ReviewAt = rAt.Time
+		}
+		if rer.Valid {
+			a.Reviewer = rer.String
+		}
+		if dec.Valid {
+			a.Decision = dec.String
+		}
+		list = append(list, a)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("读取数据失败: %w", err)
+	}
+
+	return list, int(total), nil
+}
+
+// GetApplicaitionDicision 获取某个申请的审核结果.
+func (c *Client) GetApplicationDecision(ctx context.Context, id int) (string, error) {
+	conn, err := c.pool.Acquire(ctx)
+	if err != nil {
+		return "", fmt.Errorf("无法获取数据库连接: %w", err)
+	}
+	defer conn.Release()
+
+	var dec sql.NullString
+	err = conn.QueryRow(ctx, "SELECT decision FROM applications WHERE id = $1", id).Scan(&dec)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return "", fmt.Errorf("application not found: id=%d", id)
+		}
+		return "", fmt.Errorf("查询数据库失败: %w", err)
+	}
+
+	if dec.Valid {
+		return dec.String, nil
+	}
+	return "", nil
+}
+
+// AddApplication 新增请求, 插入数据时只需要指定 Application.Applyid, Application.State, Application.Content 即可.
+func (c *Client) AddApplication(ctx context.Context, app Application) error {
+	conn, err := c.pool.Acquire(ctx)
+	if err != nil {
+		return fmt.Errorf("无法获取数据库连接: %w", err)
+	}
+	defer conn.Release()
+
+	if strings.TrimSpace(app.Content) == "" {
+		return fmt.Errorf("content is required")
+	}
+
+	// 仅插入必要字段，ApplyAt 走默认 now()；class 固定为配额申请
+	const q = `
+        INSERT INTO applications (class, state, applier, content)
+        VALUES ($1, $2, $3, $4::json)
+    `
+	if _, err := conn.Exec(ctx, q, app.Class, app.State, app.Applier, app.Content); err != nil {
+		return fmt.Errorf("插入申请失败: %w", err)
+	}
+	return nil
+}
+
+// UpdateQuotaApplication 更新申请. 该函数需要更新申请(id)对应的 content 字段, State = APPLICATION_STATE_REVIEWING
+// ApplyAt = now(), ReviewAt 置空, ReviewID 置空, Decision 置空.
+func (c *Client) UpdateApplication(ctx context.Context, id int, content string) error {
+	conn, err := c.pool.Acquire(ctx)
+	if err != nil {
+		return fmt.Errorf("无法获取数据库连接: %w", err)
+	}
+	defer conn.Release()
+
+	if strings.TrimSpace(content) == "" {
+		return fmt.Errorf("content is required")
+	}
+
+	const q = `
+        UPDATE applications
+        SET content = $1::json,
+            state = $2,
+            applyat = now(),
+            reviewat = NULL,
+            reviewer = NULL,
+            decision = NULL
+        WHERE id = $3
+    `
+	tag, err := conn.Exec(ctx, q, content, APPLICATION_STATE_REVIEWING, id)
+	if err != nil {
+		return fmt.Errorf("更新申请失败: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("application not found: id=%d", id)
+	}
+	return nil
+}
+
+// DelApplication 删除申请(id).
+func (c *Client) DelApplication(ctx context.Context, id int) error {
+	conn, err := c.pool.Acquire(ctx)
+	if err != nil {
+		return fmt.Errorf("无法获取数据库连接: %w", err)
+	}
+	defer conn.Release()
+
+	tag, err := conn.Exec(ctx, "DELETE FROM applications WHERE id = $1", id)
+	if err != nil {
+		return fmt.Errorf("删除申请失败: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("application not found: id=%d", id)
+	}
+	return nil
+}
+
+// DoQuotaReview 执行审核, 根据参数更新 state, decision, content 字段. 同时更新 reviewat = now().
+func (c *Client) DoReview(ctx context.Context, id, state int, descision, content string) error {
+	conn, err := c.pool.Acquire(ctx)
+	if err != nil {
+		return fmt.Errorf("无法获取数据库连接: %w", err)
+	}
+	defer conn.Release()
+
+	if strings.TrimSpace(content) == "" {
+		return fmt.Errorf("content is required")
+	}
+
+	const q = `
+        UPDATE applications
+        SET decision = $1,
+            content  = $2::json,
+            reviewat = now(),
+            state    = $3
+        WHERE id = $4
+    `
+	tag, err := conn.Exec(ctx, q, descision, content, state, id)
+	if err != nil {
+		return fmt.Errorf("审核更新失败: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("application not found: id=%d", id)
+	}
+	return nil
+}
+
+// func (c *Client) DoSlurmApplicationReview(ctx context.Context, id, state int, decision string) error {
+// 	conn, err := c.pool.Acquire(ctx)
+// 	if err != nil {
+// 		return fmt.Errorf("无法获取数据库连接: %w", err)
+// 	}
+// 	defer conn.Release()
+
+// 	const q = `
+//         UPDATE applications
+//         SET decision = $1,
+//             reviewat = now(),
+//             state    = $2
+//         WHERE id = $3
+//     `
+// 	tag, err := conn.Exec(ctx, q, decision, state, id)
+// 	if err != nil {
+// 		return fmt.Errorf("审核更新失败: %w", err)
+// 	}
+// 	if tag.RowsAffected() == 0 {
+// 		return fmt.Errorf("application not found: id=%d", id)
+// 	}
+// 	return nil
+// }

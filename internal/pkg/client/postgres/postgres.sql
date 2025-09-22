@@ -38,3 +38,16 @@ CREATE INDEX idx_alert_endsat ON alert (endsat);
 CREATE INDEX idx_alertlabel_label_value_alertid ON alertlabel (label, value, alertid);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_alertlabel_label ON alertlabel (label);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_alertlabel_label_value ON public.alertlabel (label, value);
+
+CREATE TABLE Applications (
+    ID SERIAL NOT NULL PRIMARY KEY,
+    Class VARCHAR(100) NOT NULL,
+    -- ClusterID INT, -- 集群 ID
+    State INT NOT NULL, -- 当前状态
+    ApplyAt TIMESTAMPTZ NOT NULL DEFAULT now(), -- 申请日期
+    Applier VARCHAR(100) NOT NULL, -- 申请用户 ID
+    ReviewAt TIMESTAMPTZ NULL, -- 审核日期
+    Reviewer VARCHAR(100) NULL, -- 审核用户 ID
+    Decision text NULL, -- 审核结果
+    Content JSON NOT NULL -- 申请内容
+)

@@ -67,6 +67,137 @@ definitions:
         description: 带外报警统计信息
         type: object
     type: object
+  ldap.GroupListItem:
+    properties:
+      description:
+        description: ldap.description
+        type: string
+      gid:
+        description: ldap.GidNumber
+        type: integer
+      name:
+        description: ldap.cn
+        type: string
+      users:
+        description: ldap.memberuid
+        items:
+          type: string
+        type: array
+    type: object
+  ldap.User:
+    properties:
+      additional_groups:
+        description: 需根据 ldap.uid 单独查询
+        items:
+          type: string
+        type: array
+      cn:
+        description: 全名
+        type: string
+      group:
+        description: 对应 ldap.gidNumber
+        type: string
+      home_dir:
+        description: 家目录
+        type: string
+      mobile:
+        description: 电话
+        type: string
+      name:
+        description: 对应 ldap.uid
+        type: string
+      ou:
+        description: 部门
+        type: string
+      uid:
+        description: 对应 ldap.uidNumber
+        type: string
+    type: object
+  lustre.QuotaApplication:
+    properties:
+      actual:
+        allOf:
+        - $ref: '#/definitions/lustre.UserQuota'
+        description: 当前实际配额
+      apply:
+        allOf:
+        - $ref: '#/definitions/lustre.UserQuota'
+        description: 申请内容
+      apply_at:
+        description: 申请日期
+        type: string
+      decision:
+        description: 审核结果
+        type: string
+      id:
+        type: integer
+      review_at:
+        description: 审核日期
+        type: string
+      state:
+        description: '审核状态, 0: 审核中, 1: 完成'
+        type: string
+    type: object
+  lustre.Review:
+    properties:
+      approve:
+        description: 是否通过审核
+        type: boolean
+      block_quota_grace:
+        description: 块配额宽限期
+        type: string
+      block_quota_hard_limit:
+        description: 块配额硬限制
+        type: string
+      block_quota_soft_limit:
+        description: 块配额软限制
+        type: string
+      decision:
+        description: 审核意见
+        type: string
+      file_quota_grace:
+        description: 文件配额宽限期
+        type: string
+      file_quota_hard_limit:
+        description: 文件配额硬限制
+        type: string
+      file_quota_soft_limit:
+        description: 文件配额软限制
+        type: string
+      filesystem:
+        description: 文件系统
+        type: string
+      user:
+        description: 用户
+        type: string
+    type: object
+  lustre.UserQuota:
+    properties:
+      block_quota_grace:
+        description: 块配额宽限期
+        type: string
+      block_quota_hard_limit:
+        description: 块配额硬限制
+        type: string
+      block_quota_soft_limit:
+        description: 块配额软限制
+        type: string
+      file_quota_grace:
+        description: 文件配额宽限期
+        type: string
+      file_quota_hard_limit:
+        description: 文件配额硬限制
+        type: string
+      file_quota_soft_limit:
+        description: 文件配额软限制
+        type: string
+      filesystem:
+        description: 文件系统
+        type: string
+      user:
+        description: 用户
+        type: string
+    type: object
   model.JobsStepInScheduling:
     properties:
       Name:
@@ -110,6 +241,74 @@ definitions:
       previous:
         type: string
       results: {}
+    type: object
+  slurm.Application:
+    properties:
+      apply_at:
+        description: 申请日期
+        type: string
+      decision:
+        description: 审核结果
+        type: string
+      duration:
+        description: 持续时间 Duration
+        type: string
+      flags:
+        description: 预约类型 Flags
+        type: string
+      id:
+        type: integer
+      node_cnt:
+        description: 预约节点数
+        type: integer
+      nodes:
+        description: 预约节点 Nodes
+        type: string
+      partition:
+        description: 分区名称 PartitionName
+        type: string
+      reservation_name:
+        description: 预约名称 ReservationName
+        type: string
+      review_at:
+        description: 审核日期
+        type: string
+      start:
+        description: 开始时间 StartTime
+        type: string
+      state:
+        description: 审核状态
+        type: string
+      user:
+        description: 预约用户
+        type: string
+    type: object
+  slurm.ApplicationContent:
+    properties:
+      duration:
+        description: 持续时间 Duration
+        type: string
+      flags:
+        description: 预约类型 Flags
+        type: string
+      node_cnt:
+        description: 预约节点数
+        type: integer
+      nodes:
+        description: 预约节点 Nodes
+        type: string
+      partition:
+        description: 分区名称 PartitionName
+        type: string
+      reservation_name:
+        description: 预约名称 ReservationName
+        type: string
+      start:
+        description: 开始时间 StartTime
+        type: string
+      user:
+        description: 预约用户
+        type: string
     type: object
   slurm.AssociationDetail:
     properties:
@@ -585,6 +784,37 @@ definitions:
         description: 作业运⾏时间限制
         type: integer
     type: object
+  slurm.Review:
+    properties:
+      approve:
+        type: boolean
+      decision:
+        type: string
+      duration:
+        description: 持续时间 Duration
+        type: string
+      flags:
+        description: 预约类型 Flags
+        type: string
+      node_cnt:
+        description: 预约节点数
+        type: integer
+      nodes:
+        description: 预约节点 Nodes
+        type: string
+      partition:
+        description: 分区名称 PartitionName
+        type: string
+      reservation_name:
+        description: 预约名称 ReservationName
+        type: string
+      start:
+        description: 开始时间 StartTime
+        type: string
+      user:
+        description: 预约用户
+        type: string
+    type: object
   slurm.StepOfJobFromAccounting:
     properties:
       name:
@@ -666,6 +896,726 @@ info:
   title: csjk-bk
   version: 0.0.1-alpha
 paths:
+  /api/v1/:cluster/ldap/group:
+    post:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 在某集群 ldap 中创建用户组
+      tags:
+      - 资源管理
+      - 用户管理
+  /api/v1/:cluster/ldap/group/:name:
+    delete:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 用户组名称
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 在某集群 ldap 中删除用户组
+      tags:
+      - 资源管理
+      - 用户管理
+    put:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 用户组名称
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 在某集群 ldap 中更新用户组信息
+      tags:
+      - 资源管理
+      - 用户管理
+  /api/v1/:cluster/ldap/group/list:
+    get:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - default: true
+        description: 是否分页
+        in: query
+        name: paging
+        type: boolean
+      - default: 1
+        description: 页码，从1开始
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  items:
+                    $ref: '#/definitions/ldap.GroupListItem'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取 ldap 用户组列表
+      tags:
+      - 资源管理
+      - 用户管理
+  /api/v1/:cluster/ldap/user:
+    post:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 在某集群 ldap 中创建用户
+      tags:
+      - 资源管理
+      - 用户管理
+  /api/v1/:cluster/ldap/user/:name:
+    delete:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 用户名
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 在某集群 ldap 中删除用户
+      tags:
+      - 资源管理
+      - 用户管理
+    put:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 用户名
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 在某集群 ldap 中更新用户信息
+      tags:
+      - 资源管理
+      - 用户管理
+  /api/v1/:cluster/ldap/user/list:
+    get:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - default: true
+        description: 是否分页
+        in: query
+        name: paging
+        type: boolean
+      - default: 1
+        description: 页码，从1开始
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  items:
+                    $ref: '#/definitions/ldap.User'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取某集群 LDAP 用户列表
+      tags:
+      - 资源管理
+      - 用户管理
+  /api/v1/:cluster/lustre/:user/quota:
+    put:
+      description: 在某集群更新用户 Lustre 配额.
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 用户名
+        in: path
+        name: user
+        required: true
+        type: string
+      - description: 配额参数（需包含 filesystem，其他字段留空表示不更新）
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/lustre.UserQuota'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 在某集群更新用户 Lustre 配额
+      tags:
+      - 资源管理
+      - 存储管理
+  /api/v1/:cluster/lustre/quota:
+    put:
+      description: 更新某挂载点的默认配额上限（非用户维度）。参数 cluster 为保留参数。
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 默认配额（仅使用 filesystem 与限额字段，user 忽略）
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/lustre.UserQuota'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 更新 Lustre 全局（默认）配额
+      tags:
+      - 资源管理
+      - 存储管理
+  /api/v1/:cluster/lustre/quota/application:
+    post:
+      description: 参数 cluster 为保留参数, 当前整体设计就不支持多集群.
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 申请内容（用户配额信息）
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/lustre.UserQuota'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 提交配额申请
+      tags:
+      - 资源管理
+      - 存储管理
+  /api/v1/:cluster/lustre/quota/application/{id}:
+    delete:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 申请ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 删除配额申请
+      tags:
+      - 资源管理
+      - 存储管理
+    put:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 申请ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 申请内容（用户配额信息）
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/lustre.UserQuota'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 更新配额申请
+      tags:
+      - 资源管理
+      - 存储管理
+  /api/v1/:cluster/lustre/quota/application/{id}/decision:
+    get:
+      description: 获取某个配额申请的审核结果. 参数 cluster 为保留参数, 当前整体设计就不支持多集群.
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 申请ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取某个配额申请的审核结果
+      tags:
+      - 资源管理
+      - 存储管理
+  /api/v1/:cluster/lustre/quota/application/{id}/review:
+    post:
+      description: 根据审核结果执行实际配额配置（通过时）并更新申请的审核状态与内容
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 申请ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 审核结果与配额内容
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/lustre.Review'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 审核配额申请
+      tags:
+      - 资源管理
+      - 存储管理
+  /api/v1/:cluster/lustre/quota/applications:
+    get:
+      description: 获取配额申请列表，支持按申请人筛选与分页；Actual 字段依据 KD 查询当前实际配额并以默认值兜底
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 申请人名称, 为空则返回所有申请
+        in: query
+        name: name
+        type: string
+      - default: true
+        description: 是否分页
+        in: query
+        name: paging
+        type: boolean
+      - default: 1
+        description: 页码，从1开始
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  items:
+                    $ref: '#/definitions/lustre.QuotaApplication'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取配额申请列表
+      tags:
+      - 资源管理
+      - 存储管理
+  /api/v1/:cluster/lustre/quotas:
+    get:
+      description: 获取某集群 Lustre 用户配额. 当未指定user时, 将会获取该集群所有用户(ldap)的配额. 参数 cluster
+        为保留参数, 当前整体设计就不支持多集群.
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - collectionFormat: csv
+        description: 用户名，可重复传多个 user=alice&user=bob
+        in: query
+        items:
+          type: string
+        name: user
+        type: array
+      - default: true
+        description: 是否分页
+        in: query
+        name: paging
+        type: boolean
+      - default: 1
+        description: 页码，从1开始
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  items:
+                    $ref: '#/definitions/lustre.UserQuota'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取某集群 Lustre 用户配额
+      tags:
+      - 资源管理
+      - 存储管理
   /api/v1/{cluster}/ldap/group:
     delete:
       parameters:
@@ -1451,6 +2401,262 @@ paths:
       tags:
       - 资源管理
       - 用户管理
+  /api/v1/{cluster}/slurm/reservation/application:
+    post:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 申请内容
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/slurm.ApplicationContent'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 创建资源预约申请
+      tags:
+      - 资源管理
+      - 资源预约
+  /api/v1/{cluster}/slurm/reservation/application/{id}:
+    delete:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 申请ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 删除资源预约申请
+      tags:
+      - 资源管理
+      - 资源预约
+    put:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 申请ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 申请内容
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/slurm.ApplicationContent'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 更新资源预约申请
+      tags:
+      - 资源管理
+      - 资源预约
+  /api/v1/{cluster}/slurm/reservation/application/{id}/decision:
+    get:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 申请ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取资源预约申请的审核结果
+      tags:
+      - 资源管理
+      - 资源预约
+  /api/v1/{cluster}/slurm/reservation/application/{id}/review:
+    put:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 申请ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 审核结论
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/slurm.Review'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 审核资源预约申请
+      tags:
+      - 资源管理
+      - 资源预约
+  /api/v1/{cluster}/slurm/reservation/applications:
+    get:
+      parameters:
+      - description: 集群名称
+        example: '"test"'
+        in: path
+        name: cluster
+        required: true
+        type: string
+      - description: 申请人，缺省为全部
+        in: query
+        name: applier
+        type: string
+      - default: true
+        description: 是否分页
+        in: query
+        name: paging
+        type: boolean
+      - default: 1
+        description: 页码，从1开始
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                results:
+                  items:
+                    $ref: '#/definitions/slurm.Application'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取资源预约申请列表
+      tags:
+      - 资源管理
+      - 资源预约
   /api/v1/{cluster}/slurm/scheduling/job/{jobid}/detail:
     get:
       parameters:

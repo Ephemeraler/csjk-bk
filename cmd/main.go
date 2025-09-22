@@ -5,8 +5,11 @@ import (
 	"csjk-bk/internal/app/docs"
 	"csjk-bk/internal/app/router"
 	"csjk-bk/internal/module/alert"
+	"csjk-bk/internal/module/ldap"
+	"csjk-bk/internal/module/lustre"
 	"csjk-bk/internal/module/slurm"
 	"csjk-bk/internal/pkg/client/alertmanager"
+	lustrec "csjk-bk/internal/pkg/client/lustre"
 	"csjk-bk/internal/pkg/client/postgres"
 	"csjk-bk/internal/pkg/client/slurmrest"
 	"csjk-bk/internal/pkg/log"
@@ -86,6 +89,15 @@ func main() {
 	slurmRouter := slurm.NewRouter(db, slurmrestClient, logger)
 	amClient := &alertmanager.Client{}
 	alertRouter := alert.NewRouter(db, amClient, logger)
+	ldapRouter := ldap.NewRouter(db, slurmrestClient, logger)
+	lustreClient := &lustrec.Client{}
+	if logger == nil {
+		fmt.Println("nil")
+	} else {
+		fmt.Println("asdfdsaf")
+	}
+	lustreClient.SetClient(http.DefaultClient, logger)
+	lustreRouter := lustre.NewRouter(db, slurmrestClient, lustreClient, logger)
 	// Build router
 	r := router.New()
 
@@ -96,6 +108,8 @@ func main() {
 	router.Register(
 		slurmRouter,
 		alertRouter,
+		ldapRouter,
+		lustreRouter,
 	)
 	router.Mount(r)
 	srv := &http.Server{

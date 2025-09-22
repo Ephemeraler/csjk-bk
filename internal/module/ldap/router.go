@@ -23,15 +23,16 @@ func NewRouter(db *postgres.Client, slurmrestc *slurmrest.Client, logger *slog.L
 }
 
 func (rt *Router) Register(r *gin.Engine) {
-	v1 := r.Group("/api/v1/ldap")
+	rt.logger.Debug("register ldap router")
+	v1 := r.Group("/api/v1/:cluster/ldap")
 	{
-		v1.GET("/user/list", rt.HandlerGetUserlist) // GET /api/v1/:cluster/ldap/user/list
-		v1.POST("/user")
-		v1.PUT("/user/:name")
-		v1.DELETE("/user/:name")
-		v1.GET("/group/list")
-		v1.POST("/group")
-		v1.PUT("/group/:name")
-		v1.DELETE("/group/:name")
+		v1.GET("/user/list", rt.HandlerGetUserlist)      // GET /api/v1/:cluster/ldap/user/list
+		v1.POST("/user", rt.HandlerPostUser)             // POST /api/v1/:cluster/ldap/user
+		v1.PUT("/user/:name", rt.HandlerPutUser)         // PUT /api/v1/:cluster/ldap/user/:name
+		v1.DELETE("/user/:name", rt.HandlerDeleteUser)   // DELETE /api/v1/:cluster/ldap/user/:name
+		v1.GET("/group/list", rt.HandlerGetGroupList)    // GET /api/v1/:cluster/ldap/group/list
+		v1.POST("/group", rt.HandlerAddGroup)            // POST /api/v1/:cluster/ldap/group
+		v1.PUT("/group/:name", rt.HandlerUpdateGroup)    // PUT /api/v1/:cluster/ldap/group/:name
+		v1.DELETE("/group/:name", rt.HandlerDeleteGroup) // DELETE /api/v1/:cluster/ldap/group/:name
 	}
 }

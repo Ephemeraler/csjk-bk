@@ -23,6 +23,7 @@ func NewRouter(db *postgres.Client, slurmrestc *slurmrest.Client, logger *slog.L
 }
 
 func (rt *Router) Register(r *gin.Engine) {
+	rt.logger.Debug("register slrum router")
 	v1 := r.Group("/api/v1/")
 	{
 		g := v1.Group("/:cluster/slurm")
@@ -40,5 +41,11 @@ func (rt *Router) Register(r *gin.Engine) {
 		g.GET("partition/:name/detail", rt.HandlerGetPartitionDetail)                          // GET /api/v1/:cluster/slurm/partition/:name/detail
 		g.GET("/scheduling/job/list", rt.HandlerGetSchedulingJobList)                          // GET /api/v1/:cluster/slurm/scheduling/job/list
 		g.GET("/scheduling/job/:jobid/detail", rt.HandlerGetSchedulingJobsDetail)              // GET /api/v1/:cluster/slurm/scheduling/job/:jobid/detail
+		g.GET("/reservation/applications", rt.HandlerGetReservationApps)                       // GET /api/v1/:cluster/slurm/reservation/applications?applier=xxx&paging=xxx&page=xxx&page_size=xxx
+		g.GET("/reservation/application/:id/decision", rt.HandlerGetApplicationDecision)       // GET /api/v1/:cluster/slurm/reservation/application/:id/decision
+		g.POST("/reservation/application", rt.HandlerCreateApplication)                        // POST /api/v1/:cluster/slurm/reservation/application
+		g.PUT("/reservation/application/:id", rt.HandlerUpdateApplication)                     // PUT /api/v1/:cluster/slurm/reservation/application/:id
+		g.DELETE("/reservation/application/:id", rt.HandlerDelApplication)                     // DELETE /api/v1/:cluster/slurm/reservation/application/:id
+		g.PUT("/reservation/application/:id/review", rt.HandlerRevireApplication)              // PUT /api/v1/:cluster/slurm/reservation/application/:id/review
 	}
 }

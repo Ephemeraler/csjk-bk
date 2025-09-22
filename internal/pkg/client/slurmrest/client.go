@@ -1,6 +1,7 @@
 package slurmrest
 
 import (
+	"bytes"
 	"context"
 	"csjk-bk/internal/pkg/client/slurmrest/model"
 	"encoding/json"
@@ -829,4 +830,309 @@ func (c *Client) GetAdditionalGroupsOfUser(ctx context.Context, addr string, nam
 	}
 
 	return data.Results, nil
+}
+
+// AddUser 创建 Ldap 用户.
+func (c *Client) AddUser(ctx context.Context, addr string, user map[string]string) error {
+	// Post http://<addr>/api/v1/ldap/user 请求体直接使用 user(map[string]string)
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	urlStr := fmt.Sprintf("http://%s/api/v1/ldap/user", addr)
+
+	payload, err := json.Marshal(user)
+	if err != nil {
+		c.logger.Error("unable to marshal ldap user payload", "err", err.Error())
+		return fmt.Errorf("unable to marshal ldap user payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, urlStr, bytes.NewReader(payload))
+	if err != nil {
+		c.logger.Error("unable to create request for slurmrestd", "err", err.Error(), "url", urlStr)
+		return fmt.Errorf("unable to create rrequest for slurmrestd: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("unable to do request for slurmrestd", "err", err.Error(), "url", urlStr)
+	}
+	defer resp.Body.Close()
+
+	data := struct {
+		Results model.AssociationItem `json:"results"`
+		Detail  string                `json:"detail"`
+	}{}
+
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		c.logger.Error("unable to decode slurmrestd response", "err", err.Error(), "url", urlStr)
+		return fmt.Errorf("unable to decode response: %w", err)
+	}
+
+	if resp.StatusCode/100 != 2 {
+		c.logger.Error("unexcepted status code", "code", resp.StatusCode, "url", urlStr, "detail", data.Detail)
+		return fmt.Errorf("unexcepted status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (c *Client) UpdateLdapUser(ctx context.Context, addr, user string, attr map[string]string) error {
+    // PUT http:/<addr>/api/v1/ldap/user/:user
+    // body = attr
+    ctx, cancel := context.WithTimeout(ctx, c.timeout)
+    defer cancel()
+
+    safe := url.PathEscape(user)
+    urlStr := fmt.Sprintf("http://%s/api/v1/ldap/user/%s", addr, safe)
+
+    payload, err := json.Marshal(attr)
+    if err != nil {
+        c.logger.Error("unable to marshal ldap user update payload", "err", err.Error())
+        return fmt.Errorf("unable to marshal ldap user update payload: %w", err)
+    }
+
+    req, err := http.NewRequestWithContext(ctx, http.MethodPut, urlStr, bytes.NewReader(payload))
+    if err != nil {
+        c.logger.Error("unable to create request for slurmrestd", "err", err.Error(), "url", urlStr)
+        return fmt.Errorf("unable to create rrequest for slurmrestd: %w", err)
+    }
+    req.Header.Set("Content-Type", "application/json")
+
+    resp, err := c.client.Do(req)
+    if err != nil {
+        return fmt.Errorf("unable to do request for slurmrestd", "err", err.Error(), "url", urlStr)
+    }
+    defer resp.Body.Close()
+
+    data := struct {
+        Detail string `json:"detail"`
+    }{}
+    if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+        c.logger.Error("unable to decode slurmrestd response", "err", err.Error(), "url", urlStr)
+        return fmt.Errorf("unable to decode response: %w", err)
+    }
+
+    if resp.StatusCode/100 != 2 {
+        c.logger.Error("unexcepted status code", "code", resp.StatusCode, "url", urlStr, "detail", data.Detail)
+        return fmt.Errorf("unexcepted status code: %d", resp.StatusCode)
+    }
+
+    return nil
+}
+
+func (c *Client) AddMemberForGroups(ctx context.Context, addr string, user string, groups []string) error {
+	// http://<addr>/api/v1/ldap/user/:user/groups post
+	// body : {"groups": ["g1", "g2", ...]}
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	safe := url.PathEscape(user)
+	urlStr := fmt.Sprintf("http://%s/api/v1/ldap/user/%s/groups", addr, safe)
+
+	payload := struct {
+		Groups []string `json:"groups"`
+	}{Groups: groups}
+
+	b, err := json.Marshal(payload)
+	if err != nil {
+		c.logger.Error("unable to marshal groups payload", "err", err.Error())
+		return fmt.Errorf("unable to marshal groups payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, urlStr, bytes.NewReader(b))
+	if err != nil {
+		c.logger.Error("unable to create request for slurmrestd", "err", err.Error(), "url", urlStr)
+		return fmt.Errorf("unable to create rrequest for slurmrestd: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("unable to do request for slurmrestd", "err", err.Error(), "url", urlStr)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode/100 != 2 {
+		c.logger.Error("unexcepted status code", "code", resp.StatusCode, "url", urlStr)
+		return fmt.Errorf("unexcepted status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (c *Client) DelLdapUser(ctx context.Context, addr, user string) error {
+	// DELETE http://<addr>/api/v1/ldap/user/:user
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	safe := url.PathEscape(user)
+	urlStr := fmt.Sprintf("http://%s/api/v1/ldap/user/%s", addr, safe)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, urlStr, nil)
+	if err != nil {
+		c.logger.Error("unable to create request for slurmrestd", "err", err.Error(), "url", urlStr)
+		return fmt.Errorf("unable to create rrequest for slurmrestd: %w", err)
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("unable to do request for slurmrestd", "err", err.Error(), "url", urlStr)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode/100 != 2 {
+		c.logger.Error("unexcepted status code", "code", resp.StatusCode, "url", urlStr)
+		return fmt.Errorf("unexcepted status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (c *Client) AddGroup(ctx context.Context, addr string, group map[string]string) error {
+	// Post http://<addr>/api/v1/ldap/group
+	// body = 参数 group
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	urlStr := fmt.Sprintf("http://%s/api/v1/ldap/group", addr)
+
+	payload, err := json.Marshal(group)
+	if err != nil {
+		c.logger.Error("unable to marshal ldap group payload", "err", err.Error())
+		return fmt.Errorf("unable to marshal ldap group payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, urlStr, bytes.NewReader(payload))
+	if err != nil {
+		c.logger.Error("unable to create request for slurmrestd", "err", err.Error(), "url", urlStr)
+		return fmt.Errorf("unable to create rrequest for slurmrestd: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("unable to do request for slurmrestd", "err", err.Error(), "url", urlStr)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode/100 != 2 {
+		c.logger.Error("unexcepted status code", "code", resp.StatusCode, "url", urlStr)
+		return fmt.Errorf("unexcepted status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (c *Client) DelLdapGroup(ctx context.Context, addr, group string) error {
+	// DELETE http://<addr>/api/v1/ldap/group/:group
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	safe := url.PathEscape(group)
+	urlStr := fmt.Sprintf("http://%s/api/v1/ldap/group/%s", addr, safe)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, urlStr, nil)
+	if err != nil {
+		c.logger.Error("unable to create request for slurmrestd", "err", err.Error(), "url", urlStr)
+		return fmt.Errorf("unable to create rrequest for slurmrestd: %w", err)
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("unable to do request for slurmrestd", "err", err.Error(), "url", urlStr)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode/100 != 2 {
+		c.logger.Error("unexcepted status code", "code", resp.StatusCode, "url", urlStr)
+		return fmt.Errorf("unexcepted status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (c *Client) UpdateLdapGroup(ctx context.Context, addr, group string, attr map[string]string) error {
+	// PUT http://<addr>/api/v1/ldap/group/:group
+	// body = attr
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	safe := url.PathEscape(group)
+	urlStr := fmt.Sprintf("http://%s/api/v1/ldap/group/%s", addr, safe)
+
+	payload, err := json.Marshal(attr)
+	if err != nil {
+		c.logger.Error("unable to marshal ldap group update payload", "err", err.Error())
+		return fmt.Errorf("unable to marshal ldap group update payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, urlStr, bytes.NewReader(payload))
+	if err != nil {
+		c.logger.Error("unable to create request for slurmrestd", "err", err.Error(), "url", urlStr)
+		return fmt.Errorf("unable to create rrequest for slurmrestd: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("unable to do request for slurmrestd", "err", err.Error(), "url", urlStr)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode/100 != 2 {
+		c.logger.Error("unexcepted status code", "code", resp.StatusCode, "url", urlStr)
+		return fmt.Errorf("unexcepted status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (c *Client) GetLdapGroups(ctx context.Context, addr string, paging bool, page, pageSize int) ([]map[string]string, int, error) {
+	// GET http://<addr>/api/v1/ldap/groups?paging=xxx&page=xxx&page_size=xxx
+	// 返回类型为 response.Response, results 对应类型为 []map[string]string
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	base := fmt.Sprintf("http://%s/api/v1/ldap/groups", addr)
+	u, _ := url.Parse(base)
+	q := u.Query()
+	q.Set("paging", fmt.Sprintf("%t", paging))
+	if page > 0 {
+		q.Set("page", fmt.Sprint(page))
+	}
+	if pageSize > 0 {
+		q.Set("page_size", fmt.Sprint(pageSize))
+	}
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		c.logger.Error("unable to create request for slurmrestd", "err", err.Error(), "url", u.String())
+		return nil, 0, fmt.Errorf("unable to create rrequest for slurmrestd: %w", err)
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, 0, fmt.Errorf("unable to do request for slurmrestd", "err", err.Error(), "url", u.String())
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode/100 != 2 {
+		c.logger.Error("unexcepted status code", "code", resp.StatusCode, "url", u.String())
+		return nil, 0, fmt.Errorf("unexcepted status code: %d", resp.StatusCode)
+	}
+
+	data := struct {
+		Count   int                 `json:"count"`
+		Results []map[string]string `json:"results"`
+		Detail  string              `json:"detail"`
+	}{}
+
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		c.logger.Error("unable to decode slurmrestd response", "err", err.Error(), "url", u.String())
+		return nil, 0, fmt.Errorf("unable to decode slurmrestd response: %w", err)
+	}
+
+	return data.Results, data.Count, nil
 }
