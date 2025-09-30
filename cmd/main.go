@@ -12,6 +12,7 @@ import (
 	lustrec "csjk-bk/internal/pkg/client/lustre"
 	"csjk-bk/internal/pkg/client/postgres"
 	"csjk-bk/internal/pkg/client/slurmrest"
+	"csjk-bk/internal/pkg/common/paging"
 	"csjk-bk/internal/pkg/log"
 	"fmt"
 	"log/slog"
@@ -24,6 +25,8 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	"github.com/prometheus/common/version"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -72,6 +75,9 @@ func main() {
 		app.Usage(os.Args[1:])
 		os.Exit(2)
 	}
+	// register extra validation for gin binding
+	registerValidation()
+
 	// 创建 Logger
 	logger, logClose, err := log.NewLogger(logOutput, logFormat, logFile, logLevel)
 	if err != nil {
@@ -164,4 +170,12 @@ func isValidFilePath(p string) bool {
 		return false
 	}
 	return true
+}
+
+// registerValidation register for gin.Binding.
+func registerValidation() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		// set struct-level validation.
+		v.RegisterStructValidation(paging.StructLevelValidationWithPagingParam, paging.PagingParam{})
+	}
 }

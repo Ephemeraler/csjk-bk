@@ -47,5 +47,6 @@ func (rt *Router) Register(r *gin.Engine) {
 		g.PUT("/reservation/application/:id", rt.HandlerUpdateApplication)                     // PUT /api/v1/:cluster/slurm/reservation/application/:id
 		g.DELETE("/reservation/application/:id", rt.HandlerDelApplication)                     // DELETE /api/v1/:cluster/slurm/reservation/application/:id
 		g.PUT("/reservation/application/:id/review", rt.HandlerRevireApplication)              // PUT /api/v1/:cluster/slurm/reservation/application/:id/review
+		g.GET("/nodes", rt.HandlerGetAllNodes)                                                 // GET /api/v1/:cluster/slurm/nodes?partition=xxx&paging=xxx&page_size=xxx
 	}
 }

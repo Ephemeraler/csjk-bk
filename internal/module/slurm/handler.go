@@ -57,7 +57,7 @@ func (rt *Router) HandlerGetOverview(c *gin.Context) {
 
 	ctx := c.Request.Context()
 	// 获取节点(不分页)
-	nodes, err := rt.slurmrestc.GetNodes(ctx, addr, nil, false, 0, 0)
+	nodes, _, err := rt.slurmrestc.GetNodes(ctx, addr, nil, false, 0, 0)
 	if err != nil {
 		rt.logger.Error("unable to get nodes information", "err", err)
 		c.JSON(http.StatusInternalServerError, response.Response{Detail: "无法获取节点信息数据"})
@@ -866,6 +866,7 @@ func (rt *Router) HandlerGetApplicationDecision(c *gin.Context) {
 //
 // @Summary 创建资源预约申请
 // @Tags 资源管理, 资源预约
+// @Accept json
 // @Produce json
 // @Param cluster path string true "集群名称" example("test")
 // @Param body body ApplicationContent true "申请内容"
@@ -917,6 +918,7 @@ func (rt *Router) HandlerCreateApplication(c *gin.Context) {
 //
 // @Summary 更新资源预约申请
 // @Tags 资源管理, 资源预约
+// @Accept json
 // @Produce json
 // @Param cluster path string true "集群名称" example("test")
 // @Param id path int true "申请ID"
@@ -1023,6 +1025,7 @@ type Review struct {
 //
 // @Summary 审核资源预约申请
 // @Tags 资源管理, 资源预约
+// @Accept json
 // @Produce json
 // @Param cluster path string true "集群名称" example("test")
 // @Param id path int true "申请ID"
@@ -1080,4 +1083,58 @@ func (rt *Router) HandlerRevireApplication(c *gin.Context) {
 // TODO: 模拟
 func DoReservation(nodelist string) error {
 	return nil
+}
+
+type GetAllNodesQuery struct {
+	Partition string `form:"partition" binding:"required"`
+	paging.PagingParam
+}
+
+// HandlerGetAllNodes 获取某集群指定分区的节点列表
+// @Summary 获取某集群分区节点列表
+// @Description 按分区查询节点列表，支持分页。
+// @Tags 资源管理, 资源总览
+// @Produce json
+// @Param cluster path string true "集群名称" example("test")
+// @Param partition query string true "分区名称"
+// @Param paging query bool false "是否开启分页, 默认为 true" default(true)
+// @Param page query int false "页码，从1开始" default(1) minimum(1)
+// @Param page_size query int false "每页数量，最大100" default(10) minimum(1) maximum(100)
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/{cluster}/slurm/nodes [get]
+func (rt *Router) HandlerGetAllNodes(ctx *gin.Context) {
+	// get request parameters
+	cluster := ctx.Param("cluster")
+	if cluster == "" {
+		ctx.JSON(http.StatusBadRequest, response.Response{Detail: "invalid parameter 'cluster'"})
+		return
+	}
+
+	var query GetAllNodesQuery
+	if err := ctx.ShouldBindQuery(&query); err != nil {
+		ctx.JSON(http.StatusBadRequest, response.Response{Detail: err.Error()})
+		return
+	}
+
+	// get addr slurmrest server for 'cluster'
+	addr, err := rt.db.GetSlurmrestdAddr(cluster)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.Response{Detail: fmt.Sprintf("unable to get slurmrest address of cluster(%s): %s", cluster, err)})
+		return
+	}
+
+	nodes, total, err := rt.slurmrestc.GetNodes(ctx.Request.Context(), addr, []string{query.Partition}, query.Paging, query.Page, query.PageSize)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, response.Response{Detail: "unable to get nodes from slurmrest"})
+		return
+	}
+
+	var prevURL, nextURL url.URL
+	if query.Paging {
+		prevURL, nextURL = response.BuildPageLinks(ctx.Request.URL, query.Page, query.PageSize, total)
+	}
+
+	ctx.JSON(http.StatusOK, response.Response{Count: total, Previous: prevURL, Next: nextURL, Results: nodes})
 }

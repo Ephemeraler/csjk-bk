@@ -332,3 +332,168 @@ func (rt *Router) HandlerGetAlertsHistory(c *gin.Context) {
 	prev, next = response.BuildPageLinks(c.Request.URL, pq.Page, pq.PageSize, total)
 	c.JSON(http.StatusOK, response.Response{Count: total, Previous: prev, Next: next, Results: alerts})
 }
+
+type UpperQuery struct {
+	RMUIP string  `json:"rmu_ip" binding:"required"`
+	BMUIP string  `json:"bmu_ip" binding:"required"`
+	ID    string  `json:"id" binding:"required"`
+	UNC   float32 `json:"unc" binding:"required"`
+	UCR   float32 `json:"ucr" binding:"required"`
+	UNR   float32 `json:"unr" binding:"required"`
+}
+
+// HandlerSetUpperThreshsOfOutbandSensor 设置带外传感器上限阈值
+// @Summary 设置带外传感器上限阈值
+// @Description 设置单个传感器的上限阈值（UNC/UCR/UNR）。
+// @Tags 报警, 带外
+// @Accept json
+// @Produce json
+// @Param data body UpperQuery true "设置参数"
+// @Success 200 {object} response.Response{results=string}
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/alerts/outband/setting/sensor/upper/thresholds [post]
+func (rt *Router) HandlerSetUpperThreshsOfOutbandSensor(ctx *gin.Context) {
+	var uq UpperQuery
+	if err := ctx.ShouldBindJSON(&uq); err != nil {
+		ctx.JSON(http.StatusBadRequest, response.Response{Detail: err.Error()})
+		return
+	}
+
+	if err := rt.execClient.SetUpperThreshsOfOutbandSensor(ctx.Request.Context(), uq.RMUIP, uq.BMUIP, uq.ID, fmt.Sprintf("%f", uq.UNR), fmt.Sprintf("%f", uq.UCR), fmt.Sprintf("%f", uq.UNC)); err != nil {
+		ctx.JSON(http.StatusInternalServerError, response.Response{Detail: err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, response.Response{Results: "success"})
+}
+
+type LowerQuery struct {
+	RMUIP string  `json:"rmu_ip" binding:"required"`
+	BMUIP string  `json:"bmu_ip" binding:"required"`
+	ID    string  `json:"id" binding:"required"`
+	LNC   float32 `json:"lnc" binding:"required"`
+	LCR   float32 `json:"lcr" binding:"required"`
+	LNR   float32 `json:"lnr" binding:"required"`
+}
+
+// HandlerSetLowerThreshsOfOutbandSensor 设置带外传感器下限阈值
+// @Summary 设置带外传感器下限阈值
+// @Description 设置单个传感器的下限阈值（LNC/LCR/LNR）。
+// @Tags 报警, 带外
+// @Accept json
+// @Produce json
+// @Param data body LowerQuery true "设置参数"
+// @Success 200 {object} response.Response{results=string}
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/alerts/outband/setting/sensor/lower/thresholds [post]
+func (rt *Router) HandlerSetLowerThreshsOfOutbandSensor(ctx *gin.Context) {
+	var lq LowerQuery
+	if err := ctx.ShouldBindJSON(&lq); err != nil {
+		ctx.JSON(http.StatusBadRequest, response.Response{Detail: err.Error()})
+		return
+	}
+
+	if err := rt.execClient.SetLowerThreshsOfOutbandSensor(ctx.Request.Context(), lq.RMUIP, lq.BMUIP, lq.ID, fmt.Sprintf("%f", lq.LNR), fmt.Sprintf("%f", lq.LCR), fmt.Sprintf("%f", lq.LNC)); err != nil {
+		ctx.JSON(http.StatusInternalServerError, response.Response{Detail: err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, response.Response{Results: "success"})
+}
+
+type ThreshParam struct {
+	RMUIP string  `json:"rmu_ip" binding:"required"`
+	BMUIP string  `json:"bmu_ip" binding:"required"`
+	ID    string  `json:"id" binding:"required"`
+	Which string  `json:"which" binding:"required"`
+	Value float32 `json:"value" binding:"required"`
+}
+
+// HandlerSetThreshOfOutbandSensor 设置带外传感器某一阈值
+// @Summary 设置带外传感器某一阈值
+// @Description 设置某传感器指定级别（如 upper/lower/unc/ucr/unr/lnc/lcr/lnr）的阈值。
+// @Tags 报警, 带外
+// @Accept json
+// @Produce json
+// @Param data body ThreshParam true "设置参数"
+// @Success 200 {object} response.Response{results=string}
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/alerts/outband/setting/sensor/threshold [post]
+func (rt *Router) HandlerSetThreshOfOutbandSensor(ctx *gin.Context) {
+	var tq ThreshParam
+	if err := ctx.ShouldBindJSON(&tq); err != nil {
+		ctx.JSON(http.StatusBadRequest, response.Response{Detail: err.Error()})
+		return
+	}
+
+	if err := rt.execClient.SetThreshsOfOutbandSensor(ctx.Request.Context(), tq.RMUIP, tq.BMUIP, tq.ID, tq.Which, fmt.Sprintf("%f", tq.Value)); err != nil {
+		ctx.JSON(http.StatusInternalServerError, response.Response{Detail: err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, response.Response{Results: "success"})
+}
+
+type InhibitParam struct {
+	RMUIP  string `json:"rmu_ip" binding:"required"` // RMU IP
+	Board  string `json:"board" binding:"required"`  // 传感器编号
+	Sensor string `json:"sensor" binding:"required"` // 传感器编号或传感器名字
+	Rule   string `json:"rule" binding:"required"`   // 抑制规则
+}
+
+// HandlerSetInhibitOfOutbandSensor 设置带外传感器抑制规则
+// @Summary 设置带外传感器抑制规则
+// @Description 为带外传感器设置抑制规则。
+// @Tags 报警, 带外
+// @Accept json
+// @Produce json
+// @Param data body InhibitParam true "设置参数"
+// @Success 200 {object} response.Response{results=string}
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/alerts/outband/setting/sensor/inhibit [post]
+func (rt *Router) HandlerSetInhibitOfOutbandSensor(ctx *gin.Context) {
+	var ip InhibitParam
+	if err := ctx.ShouldBindJSON(&ip); err != nil {
+		ctx.JSON(http.StatusBadRequest, response.Response{Detail: err.Error()})
+		return
+	}
+
+	if err := rt.execClient.SetInhibitOfOutbandSensor(ctx.Request.Context(), ip.RMUIP, ip.Board, ip.Sensor, ip.Rule); err != nil {
+		ctx.JSON(http.StatusInternalServerError, response.Response{Detail: err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, response.Response{Results: "success"})
+}
+
+type ThresholdQuery struct {
+	RMUIP string `form:"rmu_ip" binding:"required"`
+	BMUIP string `form:"bmu_ip" binding:"required"`
+}
+
+// HandlerGetThreshOfOutbandSensor 查询带外传感器阈值
+// @Summary 查询带外传感器阈值
+// @Description 查询指定 RMU 与 BMU 的所有带外传感器阈值信息。
+// @Tags 报警, 带外
+// @Produce json
+// @Param rmu_ip query string true "RMU IP"
+// @Param bmu_ip query string true "BMU IP"
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /api/v1/alerts/outband/sensor/thresholds [get]
+func (rt *Router) HandlerGetThreshOfOutbandSensor(ctx *gin.Context) {
+	var tq ThresholdQuery
+	if err := ctx.ShouldBindQuery(&tq); err != nil {
+		ctx.JSON(http.StatusBadRequest, response.Response{Detail: err.Error()})
+		return
+	}
+
+	ths, err := rt.execClient.GetThresholdOfOutbandSensor(ctx.Request.Context(), tq.RMUIP, tq.BMUIP)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.Response{Detail: err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, response.Response{Results: ths})
+}

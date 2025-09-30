@@ -39,7 +39,7 @@ func New(client Doer, timeout time.Duration, logger *slog.Logger) *Client {
 //   - partition: ?partition=p1&partition=p2
 //   - state: ?state=idle&state=alloc
 //   - node: ?node=cn001
-func (sc *Client) GetNodes(ctx context.Context, addr string, partitions []string, paging bool, page, page_size int) (model.Nodes, error) {
+func (sc *Client) GetNodes(ctx context.Context, addr string, partitions []string, paging bool, page, page_size int) (model.Nodes, int, error) {
 	ctx, cancel := context.WithTimeout(ctx, sc.timeout)
 	defer cancel()
 
@@ -58,31 +58,32 @@ func (sc *Client) GetNodes(ctx context.Context, addr string, partitions []string
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		sc.logger.Error("unable to create request for slurmrestd", "err", err.Error(), "url", u.String())
-		return nil, fmt.Errorf("unable to create rrequest for slurmrestd: %w", err)
+		return nil, 0, fmt.Errorf("unable to create rrequest for slurmrestd: %w", err)
 	}
 
 	resp, err := sc.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("unable to do request for slurmrestd", "err", err.Error(), "url", u.String())
+		return nil, 0, fmt.Errorf("unable to do request for slurmrestd", "err", err.Error(), "url", u.String())
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode/100 != 2 {
 		sc.logger.Error("unexcepted status code", "code", resp.StatusCode, "url", u.String())
-		return nil, fmt.Errorf("unexcepted status code: %d", resp.StatusCode)
+		return nil, 0, fmt.Errorf("unexcepted status code: %d", resp.StatusCode)
 	}
 
 	data := struct {
+		Count   int         `json:"count"`
 		Results model.Nodes `json:"results"`
 		Detail  string      `json:"detail"`
 	}{}
 
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		sc.logger.Error("unable to decode slurmrestd response", "err", err.Error(), "url", u.String())
-		return nil, fmt.Errorf("unable to decode slurmrestd response: %w", err)
+		return nil, 0, fmt.Errorf("unable to decode slurmrestd response: %w", err)
 	}
 
-	return data.Results, nil
+	return data.Results, data.Count, nil
 }
 
 // GetSchedulingJobs 获取调度作业中作业信息
@@ -878,47 +879,47 @@ func (c *Client) AddUser(ctx context.Context, addr string, user map[string]strin
 }
 
 func (c *Client) UpdateLdapUser(ctx context.Context, addr, user string, attr map[string]string) error {
-    // PUT http:/<addr>/api/v1/ldap/user/:user
-    // body = attr
-    ctx, cancel := context.WithTimeout(ctx, c.timeout)
-    defer cancel()
+	// PUT http:/<addr>/api/v1/ldap/user/:user
+	// body = attr
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
 
-    safe := url.PathEscape(user)
-    urlStr := fmt.Sprintf("http://%s/api/v1/ldap/user/%s", addr, safe)
+	safe := url.PathEscape(user)
+	urlStr := fmt.Sprintf("http://%s/api/v1/ldap/user/%s", addr, safe)
 
-    payload, err := json.Marshal(attr)
-    if err != nil {
-        c.logger.Error("unable to marshal ldap user update payload", "err", err.Error())
-        return fmt.Errorf("unable to marshal ldap user update payload: %w", err)
-    }
+	payload, err := json.Marshal(attr)
+	if err != nil {
+		c.logger.Error("unable to marshal ldap user update payload", "err", err.Error())
+		return fmt.Errorf("unable to marshal ldap user update payload: %w", err)
+	}
 
-    req, err := http.NewRequestWithContext(ctx, http.MethodPut, urlStr, bytes.NewReader(payload))
-    if err != nil {
-        c.logger.Error("unable to create request for slurmrestd", "err", err.Error(), "url", urlStr)
-        return fmt.Errorf("unable to create rrequest for slurmrestd: %w", err)
-    }
-    req.Header.Set("Content-Type", "application/json")
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, urlStr, bytes.NewReader(payload))
+	if err != nil {
+		c.logger.Error("unable to create request for slurmrestd", "err", err.Error(), "url", urlStr)
+		return fmt.Errorf("unable to create rrequest for slurmrestd: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
 
-    resp, err := c.client.Do(req)
-    if err != nil {
-        return fmt.Errorf("unable to do request for slurmrestd", "err", err.Error(), "url", urlStr)
-    }
-    defer resp.Body.Close()
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("unable to do request for slurmrestd", "err", err.Error(), "url", urlStr)
+	}
+	defer resp.Body.Close()
 
-    data := struct {
-        Detail string `json:"detail"`
-    }{}
-    if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-        c.logger.Error("unable to decode slurmrestd response", "err", err.Error(), "url", urlStr)
-        return fmt.Errorf("unable to decode response: %w", err)
-    }
+	data := struct {
+		Detail string `json:"detail"`
+	}{}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		c.logger.Error("unable to decode slurmrestd response", "err", err.Error(), "url", urlStr)
+		return fmt.Errorf("unable to decode response: %w", err)
+	}
 
-    if resp.StatusCode/100 != 2 {
-        c.logger.Error("unexcepted status code", "code", resp.StatusCode, "url", urlStr, "detail", data.Detail)
-        return fmt.Errorf("unexcepted status code: %d", resp.StatusCode)
-    }
+	if resp.StatusCode/100 != 2 {
+		c.logger.Error("unexcepted status code", "code", resp.StatusCode, "url", urlStr, "detail", data.Detail)
+		return fmt.Errorf("unexcepted status code: %d", resp.StatusCode)
+	}
 
-    return nil
+	return nil
 }
 
 func (c *Client) AddMemberForGroups(ctx context.Context, addr string, user string, groups []string) error {

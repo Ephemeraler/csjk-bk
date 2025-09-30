@@ -1363,6 +1363,291 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/alerts/outband/sensor/thresholds": {
+            "get": {
+                "description": "查询指定 RMU 与 BMU 的所有带外传感器阈值信息。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报警",
+                    "带外"
+                ],
+                "summary": "查询带外传感器阈值",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RMU IP",
+                        "name": "rmu_ip",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "BMU IP",
+                        "name": "bmu_ip",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/alerts/outband/setting/sensor/inhibit": {
+            "post": {
+                "description": "为带外传感器设置抑制规则。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报警",
+                    "带外"
+                ],
+                "summary": "设置带外传感器抑制规则",
+                "parameters": [
+                    {
+                        "description": "设置参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/alert.InhibitParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/alerts/outband/setting/sensor/lower/thresholds": {
+            "post": {
+                "description": "设置单个传感器的下限阈值（LNC/LCR/LNR）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报警",
+                    "带外"
+                ],
+                "summary": "设置带外传感器下限阈值",
+                "parameters": [
+                    {
+                        "description": "设置参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/alert.LowerQuery"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/alerts/outband/setting/sensor/threshold": {
+            "post": {
+                "description": "设置某传感器指定级别（如 upper/lower/unc/ucr/unr/lnc/lcr/lnr）的阈值。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报警",
+                    "带外"
+                ],
+                "summary": "设置带外传感器某一阈值",
+                "parameters": [
+                    {
+                        "description": "设置参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/alert.ThreshParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/alerts/outband/setting/sensor/upper/thresholds": {
+            "post": {
+                "description": "设置单个传感器的上限阈值（UNC/UCR/UNR）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报警",
+                    "带外"
+                ],
+                "summary": "设置带外传感器上限阈值",
+                "parameters": [
+                    {
+                        "description": "设置参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/alert.UpperQuery"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/{cluster}/ldap/group": {
             "post": {
                 "produces": [
@@ -2212,6 +2497,80 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/{cluster}/slurm/nodes": {
+            "get": {
+                "description": "按分区查询节点列表，支持分页。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源管理",
+                    "资源总览"
+                ],
+                "summary": "获取某集群分区节点列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"test\"",
+                        "description": "集群名称",
+                        "name": "cluster",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "分区名称",
+                        "name": "partition",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "是否开启分页, 默认为 true",
+                        "name": "paging",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码，从1开始",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "每页数量，最大100",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/{cluster}/slurm/overview": {
             "get": {
                 "description": "获取资源总览页面资源统计信息, 包括集群节点总数, 逻辑CPU总数, 总核数, 内存总量, 运行作业数, 总作业数.",
@@ -2611,6 +2970,9 @@ const docTemplate = `{
         },
         "/api/v1/{cluster}/slurm/reservation/application": {
             "post": {
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2674,6 +3036,9 @@ const docTemplate = `{
         },
         "/api/v1/{cluster}/slurm/reservation/application/{id}": {
             "put": {
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2864,6 +3229,9 @@ const docTemplate = `{
         },
         "/api/v1/{cluster}/slurm/reservation/application/{id}/review": {
             "put": {
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -3257,6 +3625,122 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "alert.InhibitParam": {
+            "type": "object",
+            "required": [
+                "board",
+                "rmu_ip",
+                "rule",
+                "sensor"
+            ],
+            "properties": {
+                "board": {
+                    "description": "传感器编号",
+                    "type": "string"
+                },
+                "rmu_ip": {
+                    "description": "RMU IP",
+                    "type": "string"
+                },
+                "rule": {
+                    "description": "抑制规则",
+                    "type": "string"
+                },
+                "sensor": {
+                    "description": "传感器编号或传感器名字",
+                    "type": "string"
+                }
+            }
+        },
+        "alert.LowerQuery": {
+            "type": "object",
+            "required": [
+                "bmu_ip",
+                "id",
+                "lcr",
+                "lnc",
+                "lnr",
+                "rmu_ip"
+            ],
+            "properties": {
+                "bmu_ip": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lcr": {
+                    "type": "number"
+                },
+                "lnc": {
+                    "type": "number"
+                },
+                "lnr": {
+                    "type": "number"
+                },
+                "rmu_ip": {
+                    "type": "string"
+                }
+            }
+        },
+        "alert.ThreshParam": {
+            "type": "object",
+            "required": [
+                "bmu_ip",
+                "id",
+                "rmu_ip",
+                "value",
+                "which"
+            ],
+            "properties": {
+                "bmu_ip": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "rmu_ip": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                },
+                "which": {
+                    "type": "string"
+                }
+            }
+        },
+        "alert.UpperQuery": {
+            "type": "object",
+            "required": [
+                "bmu_ip",
+                "id",
+                "rmu_ip",
+                "ucr",
+                "unc",
+                "unr"
+            ],
+            "properties": {
+                "bmu_ip": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "rmu_ip": {
+                    "type": "string"
+                },
+                "ucr": {
+                    "type": "number"
+                },
+                "unc": {
+                    "type": "number"
+                },
+                "unr": {
+                    "type": "number"
                 }
             }
         },
